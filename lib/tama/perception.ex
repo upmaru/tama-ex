@@ -25,8 +25,8 @@ defmodule TamaEx.Perception do
       {:error, :not_found}
 
   """
-  def get_chain(client, %TamaEx.Neural.Space{id: space_id}, slug) and
-        is_binary(slug) do
+  def get_chain(client, %TamaEx.Neural.Space{id: space_id}, slug)
+      when is_binary(slug) do
     get_chain(client, space_id, slug)
   end
 
