@@ -64,7 +64,7 @@ defmodule TamaEx.Neural do
       url = "/neural/classes/#{class_id}/operations"
 
       client
-      |> Req.post(url: url, json: validated_params)
+      |> Req.post(url: url, json: %{operation: validated_params})
       |> TamaEx.handle_response(Operation)
     end
   end
