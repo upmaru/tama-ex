@@ -16,14 +16,17 @@ defmodule TamaEx.Memory do
 
   ## Examples
 
-      iex> TamaEx.Memory.create_entity(client, %TamaEx.Neural.Class{id: "class_123"}, %{"identifier" => "entity1", "record" => %{}})
-      {:ok, %TamaEx.Memory.Entity{}}
+      iex> attrs = %{"identifier" => "entity1", "record" => %{}}
+      iex> {:ok, validated_params} = TamaEx.Memory.Entity.Params.validate(attrs)
+      iex> validated_params["identifier"]
+      "entity1"
 
-      iex> TamaEx.Memory.create_entity(client, %TamaEx.Neural.Class{id: "class_123"}, %{})
-      {:error, %Ecto.Changeset{}}
+      iex> {:error, changeset} = TamaEx.Memory.Entity.Params.validate(%{})
+      iex> changeset.valid?
+      false
 
   """
-  def create_entity(client, %{id: class_id}, attrs) when is_binary(class_id) do
+  def create_entity(client, %TamaEx.Neural.Class{id: class_id}, attrs) when is_binary(class_id) do
     with {:ok, validated_client} <- TamaEx.validate_client(client, ["ingest"]),
          {:ok, validated_params} <- EntityParams.validate(attrs) do
       url = "/memory/classes/#{class_id}/entities"
