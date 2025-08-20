@@ -24,10 +24,10 @@ defmodule TamaEx.Neural.Class.Operation.Params do
 
   ## Examples
 
-      iex> Tama.Neural.Class.Operation.Params.validate(%{"chain_ids" => ["chain1", "chain2"]})
+      iex> TamaEx.Neural.Class.Operation.Params.validate(%{"chain_ids" => ["chain1", "chain2"]})
       {:ok, %{"chain_ids" => ["chain1", "chain2"]}}
 
-      iex> Tama.Neural.Class.Operation.Params.validate(%{})
+      iex> TamaEx.Neural.Class.Operation.Params.validate(%{})
       {:error, %Ecto.Changeset{}}
 
   """

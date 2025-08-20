@@ -27,8 +27,8 @@ defmodule TamaEx.Neural.Class do
 
   ## Examples
 
-      iex> Tama.Neural.Class.parse(%{"id" => "123", "name" => "My Class"})
-      %Tama.Neural.Class{id: "123", name: "My Class"}
+      iex> TamaEx.Neural.Class.parse(%{"id" => "123", "name" => "My Class"})
+      %TamaEx.Neural.Class{id: "123", name: "My Class"}
 
   """
   def parse(attrs) when is_map(attrs) do

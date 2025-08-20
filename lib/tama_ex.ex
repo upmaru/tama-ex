@@ -8,7 +8,7 @@ defmodule TamaEx do
 
   ## Examples
 
-      iex> Tama.client(base_url: "https://api.example.com")
+      iex> TamaEx.client(base_url: "https://api.example.com")
       %Req.Request{}
 
   """
@@ -21,14 +21,14 @@ defmodule TamaEx do
 
   ## Parameters
     - response - The response from Req.get/post/etc
-    - schema_module - The module to use for parsing (e.g., Tama.Neural.Space)
+    - schema_module - The module to use for parsing (e.g., TamaEx.Neural.Space)
 
   ## Examples
 
-      iex> Tama.handle_response({:ok, %Req.Response{status: 200, body: %{"data" => %{}}}}, Tama.Neural.Space)
-      {:ok, %Tama.Neural.Space{}}
+      iex> TamaEx.handle_response({:ok, %Req.Response{status: 200, body: %{"data" => %{}}}}, TamaEx.Neural.Space)
+      {:ok, %TamaEx.Neural.Space{}}
 
-      iex> Tama.handle_response({:ok, %Req.Response{status: 404}}, Tama.Neural.Space)
+      iex> TamaEx.handle_response({:ok, %Req.Response{status: 404}}, TamaEx.Neural.Space)
       {:error, :not_found}
 
   """

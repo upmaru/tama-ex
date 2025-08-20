@@ -30,8 +30,8 @@ defmodule TamaEx.Neural.Space do
 
   ## Examples
 
-      iex> Tama.Neural.Space.parse(%{"id" => "123", "name" => "My Space"})
-      %Tama.Neural.Space{id: "123", name: "My Space"}
+      iex> TamaEx.Neural.Space.parse(%{"id" => "123", "name" => "My Space"})
+      %TamaEx.Neural.Space{id: "123", name: "My Space"}
 
   """
   def parse(attrs) when is_map(attrs) do

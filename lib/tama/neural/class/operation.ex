@@ -1,4 +1,4 @@
-defmodule Tama.Neural.Class.Operation do
+defmodule TamaEx.Neural.Class.Operation do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -25,8 +25,8 @@ defmodule Tama.Neural.Class.Operation do
 
   ## Examples
 
-      iex> Tama.Neural.Class.Operation.parse(%{"id" => "123", "current_state" => "running", "class_id" => "class_1"})
-      %Tama.Neural.Class.Operation{id: "123", current_state: "running", class_id: "class_1"}
+      iex> TamaEx.Neural.Class.Operation.parse(%{"id" => "123", "current_state" => "running", "class_id" => "class_1"})
+      %TamaEx.Neural.Class.Operation{id: "123", current_state: "running", class_id: "class_1"}
 
   """
   def parse(attrs) when is_map(attrs) do

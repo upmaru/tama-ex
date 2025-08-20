@@ -14,10 +14,10 @@ defmodule TamaEx.Neural do
 
   ## Examples
 
-      iex> Tama.Neural.get_space(client, "my-space")
-      {:ok, %Tama.Neural.Space{}}
+      iex> TamaEx.Neural.get_space(client, "my-space")
+      {:ok, %TamaEx.Neural.Space{}}
 
-      iex> Tama.Neural.get_space(client, "nonexistent")
+      iex> TamaEx.Neural.get_space(client, "nonexistent")
       {:error, :not_found}
 
   """
@@ -52,10 +52,10 @@ defmodule TamaEx.Neural do
 
   ## Examples
 
-      iex> Tama.Neural.create_class_operation(client, %Tama.Neural.Class{id: "class_123"}, %{"chain_ids" => ["chain1"]})
-      {:ok, %Tama.Neural.Class.Operation{}}
+      iex> TamaEx.Neural.create_class_operation(client, %TamaEx.Neural.Class{id: "class_123"}, %{"chain_ids" => ["chain1"]})
+      {:ok, %TamaEx.Neural.Class.Operation{}}
 
-      iex> Tama.Neural.create_class_operation(client, %Tama.Neural.Class{id: "class_123"}, %{})
+      iex> TamaEx.Neural.create_class_operation(client, %TamaEx.Neural.Class{id: "class_123"}, %{})
       {:error, %Ecto.Changeset{}}
 
   """
