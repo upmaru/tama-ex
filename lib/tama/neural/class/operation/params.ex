@@ -4,8 +4,8 @@ defmodule TamaEx.Neural.Class.Operation.Params do
 
   @primary_key false
   embedded_schema do
-    field(:chain_ids, {:array, :string})
-    field(:node_type, :string)
+    field :chain_ids, {:array, :string}
+    field :node_type, :string
   end
 
   @doc false

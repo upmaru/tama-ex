@@ -4,12 +4,12 @@ defmodule TamaEx.Neural.Class do
 
   @primary_key false
   embedded_schema do
-    field(:id, :string)
-    field(:space_id, :string)
-    field(:provision_state, :string)
-    field(:schema, :map)
-    field(:name, :string)
-    field(:description, :string)
+    field :id, :string
+    field :space_id, :string
+    field :provision_state, :string
+    field :schema, :map
+    field :name, :string
+    field :description, :string
   end
 
   @doc false

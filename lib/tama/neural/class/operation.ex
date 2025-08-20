@@ -4,10 +4,10 @@ defmodule TamaEx.Neural.Class.Operation do
 
   @primary_key false
   embedded_schema do
-    field(:id, :string)
-    field(:current_state, :string)
-    field(:class_id, :string)
-    field(:node_ids, {:array, :string})
+    field :id, :string
+    field :current_state, :string
+    field :class_id, :string
+    field :node_ids, {:array, :string}
   end
 
   @doc false

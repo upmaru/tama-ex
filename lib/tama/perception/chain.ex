@@ -4,11 +4,11 @@ defmodule TamaEx.Perception.Chain do
 
   @primary_key false
   embedded_schema do
-    field(:id, :string)
-    field(:space_id, :string)
-    field(:name, :string)
-    field(:slug, :string)
-    field(:provision_state, :string)
+    field :id, :string
+    field :space_id, :string
+    field :name, :string
+    field :slug, :string
+    field :provision_state, :string
   end
 
   @doc false
