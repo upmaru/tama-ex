@@ -1,4 +1,4 @@
-defmodule Tama.Neural.Space do
+defmodule TamaEx.Neural.Space do
   @moduledoc """
   Embedded schema for Neural Space entities.
   """

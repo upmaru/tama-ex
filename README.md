@@ -1,4 +1,4 @@
-# Tama
+# TamaEx
 
 An Elixir HTTP client wrapper that provides structured response handling and schema parsing support. Built on top of the Req HTTP client, Tama simplifies API interactions by offering consistent error handling and automatic data parsing using Ecto-style schemas.
 
@@ -17,7 +17,7 @@ The package can be installed by adding `tama` to your list of dependencies in `m
 ```elixir
 def deps do
   [
-    {:tama, "~> 0.1.0"}
+    {:tama_ex, "~> 0.1.0"}
   ]
 end
 ```

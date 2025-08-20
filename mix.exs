@@ -1,4 +1,4 @@
-defmodule Tama.MixProject do
+defmodule TamaEx.MixProject do
   use Mix.Project
 
   def project do
@@ -10,10 +10,10 @@ defmodule Tama.MixProject do
       deps: deps(),
       description: description(),
       package: package(),
-      name: "Tama",
+      name: "TamaEx",
       source_url: "https://github.com/upmaru/tama-ex",
       docs: [
-        main: "Tama",
+        main: "TamaEx",
         extras: ["README.md"]
       ]
     ]
@@ -32,7 +32,7 @@ defmodule Tama.MixProject do
 
   defp package do
     [
-      name: "tama",
+      name: "tama_ex",
       files: ~w(lib .formatter.exs mix.exs README* LICENSE*),
       licenses: ["MIT"],
       links: %{

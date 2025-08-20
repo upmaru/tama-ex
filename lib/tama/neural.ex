@@ -1,9 +1,9 @@
-defmodule Tama.Neural do
+defmodule TamaEx.Neural do
   @moduledoc """
   Client for interacting with Neural API endpoints.
   """
 
-  alias Tama.Neural.Space
+  alias __MODULE__.Space
 
   @doc """
   Gets a space by slug from the provision endpoint.
@@ -26,16 +26,16 @@ defmodule Tama.Neural do
 
     client
     |> Req.get(url: url)
-    |> Tama.handle_response(Space)
+    |> TamaEx.handle_response(Space)
   end
 
-  alias Tama.Neural.Class
+  alias __MODULE__.Class
 
   def get_class(client, %Space{id: space_id}, name) when is_binary(name) do
     url = "/neural/spaces/#{space_id}/classes/#{name}"
 
     client
     |> Req.get(url: url)
-    |> Tama.handle_response(Class)
+    |> TamaEx.handle_response(Class)
   end
 end

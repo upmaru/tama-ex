@@ -1,4 +1,4 @@
-defmodule Tama do
+defmodule TamaEx do
   @moduledoc """
   Documentation for `Tama`.
   """
