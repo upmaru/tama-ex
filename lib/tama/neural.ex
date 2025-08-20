@@ -22,21 +22,25 @@ defmodule TamaEx.Neural do
 
   """
   def get_space(client, slug) when is_binary(slug) do
-    url = "/neural/spaces/#{slug}"
+    with {:ok, validated_client} <- TamaEx.validate_client(client, ["provision"]) do
+      url = "/neural/spaces/#{slug}"
 
-    client
-    |> Req.get(url: url)
-    |> TamaEx.handle_response(Space)
+      validated_client
+      |> Req.get(url: url)
+      |> TamaEx.handle_response(Space)
+    end
   end
 
   alias __MODULE__.Class
 
   def get_class(client, %Space{id: space_id}, name) when is_binary(name) do
-    url = "/neural/spaces/#{space_id}/classes/#{name}"
+    with {:ok, validated_client} <- TamaEx.validate_client(client, ["provision"]) do
+      url = "/neural/spaces/#{space_id}/classes/#{name}"
 
-    client
-    |> Req.get(url: url)
-    |> TamaEx.handle_response(Class)
+      validated_client
+      |> Req.get(url: url)
+      |> TamaEx.handle_response(Class)
+    end
   end
 
   alias __MODULE__.Class.Operation
@@ -60,10 +64,11 @@ defmodule TamaEx.Neural do
 
   """
   def create_class_operation(client, %Class{id: class_id}, attrs) when is_binary(class_id) do
-    with {:ok, validated_params} <- OperationParams.validate(attrs) do
+    with {:ok, validated_client} <- TamaEx.validate_client(client, ["provision"]),
+         {:ok, validated_params} <- OperationParams.validate(attrs) do
       url = "/neural/classes/#{class_id}/operations"
 
-      client
+      validated_client
       |> Req.post(url: url, json: %{operation: validated_params})
       |> TamaEx.handle_response(Operation)
     end
