@@ -63,7 +63,7 @@ defmodule TamaEx.Neural do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_class_operation(client, %Class{id: class_id}, attrs) when is_binary(class_id) do
+  def create_class_operation(client, %Class{id: class_id}, attrs) do
     with {:ok, validated_client} <- TamaEx.validate_client(client, ["provision"]),
          {:ok, validated_params} <- OperationParams.validate(attrs) do
       url = "/neural/classes/#{class_id}/operations"
