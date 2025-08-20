@@ -38,4 +38,34 @@ defmodule TamaEx.Neural do
     |> Req.get(url: url)
     |> TamaEx.handle_response(Class)
   end
+
+  alias __MODULE__.Class.Operation
+  alias __MODULE__.Class.Operation.Params, as: OperationParams
+
+  @doc """
+  Creates a new operation for a class.
+
+  ## Parameters
+    - client - The HTTP client
+    - class - The Class struct containing the class_id
+    - attrs - Map containing operation parameters (chain_ids, node_type)
+
+  ## Examples
+
+      iex> Tama.Neural.create_class_operation(client, %Tama.Neural.Class{id: "class_123"}, %{"chain_ids" => ["chain1"]})
+      {:ok, %Tama.Neural.Class.Operation{}}
+
+      iex> Tama.Neural.create_class_operation(client, %Tama.Neural.Class{id: "class_123"}, %{})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_class_operation(client, %Class{id: class_id}, attrs) when is_binary(class_id) do
+    with {:ok, validated_params} <- OperationParams.validate(attrs) do
+      url = "/neural/classes/#{class_id}/operations"
+
+      client
+      |> Req.post(url: url, json: validated_params)
+      |> TamaEx.handle_response(Operation)
+    end
+  end
 end
