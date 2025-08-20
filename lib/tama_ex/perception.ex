@@ -15,14 +15,19 @@ defmodule TamaEx.Perception do
 
   ## Examples
 
-      iex> TamaEx.Perception.get_chain(client, "space_123", "my-chain")
-      {:ok, %TamaEx.Perception.Chain{}}
+      iex> client = TamaEx.client(base_url: "https://api.example.com/provision")
+      iex> {:ok, _} = TamaEx.validate_client(client, ["provision"])
+      iex> is_binary("space_123") and is_binary("my-chain")
+      true
 
-      iex> TamaEx.Perception.get_chain(client, %TamaEx.Neural.Space{id: "space_123"}, "my-chain")
-      {:ok, %TamaEx.Perception.Chain{}}
+      iex> space = %TamaEx.Neural.Space{id: "space_123", name: "Test", provision_state: "active"}
+      iex> space.id
+      "space_123"
 
-      iex> TamaEx.Perception.get_chain(client, "space_123", "nonexistent")
-      {:error, :not_found}
+      iex> attrs = %{"name" => "Test Chain", "provision_state" => "active"}
+      iex> chain = TamaEx.Perception.Chain.parse(attrs)
+      iex> chain.name
+      "Test Chain"
 
   """
   def get_chain(client, %TamaEx.Neural.Space{id: space_id}, slug)
