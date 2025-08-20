@@ -1,4 +1,4 @@
-defmodule Tama.Neural.Class do
+defmodule TamaEx.Neural.Class do
   use Ecto.Schema
   import Ecto.Changeset
 
