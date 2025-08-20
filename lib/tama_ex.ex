@@ -1,6 +1,6 @@
 defmodule TamaEx do
   @moduledoc """
-  Documentation for `Tama`.
+  Documentation for `TamaEx`.
   """
 
   @doc """
