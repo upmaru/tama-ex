@@ -4,13 +4,14 @@ defmodule TamaEx.Chat.Response do
       path = "/chat/completions"
       timeout = Keyword.get(options, :timeout) || 300_000
       headers = Keyword.get(options, :headers) || []
+      stream? = Map.get(body, "stream") || Map.get(body, :stream)
 
       stream_handler =
-        if body["stream"] do
+        if stream? do
           Keyword.get(options, :stream)
         end
 
-      if body["stream"] && is_nil(stream_handler) do
+      if stream? && is_nil(stream_handler) do
         raise """
         Stream handler is required when streaming is true pass a stream handler into options
 
