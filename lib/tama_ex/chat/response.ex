@@ -6,9 +6,9 @@ defmodule TamaEx.Chat.Response do
       headers = Keyword.get(options, :headers) || []
       stream? = Map.get(body, "stream") || Map.get(body, :stream)
 
-      stream_handler =
+      callback =
         if stream? do
-          Keyword.get(options, :stream)
+          Keyword.get(options, :callback)
         end
 
       if stream? && is_nil(stream_handler) do
@@ -34,8 +34,14 @@ defmodule TamaEx.Chat.Response do
           headers: headers
         )
 
+      stream_handler = fn {:data, data}, context ->
+        Enum.each(parse(data), callback)
+
+        {:cont, context}
+      end
+
       request =
-        if stream_handler do
+        if callback do
           Req.merge(request, into: stream_handler)
         else
           request
@@ -44,4 +50,16 @@ defmodule TamaEx.Chat.Response do
       Req.request!(request)
     end
   end
+
+  defp handle_chunk(data) do
+    data
+    |> String.split("data: ")
+    |> Enum.map(&String.trim/1)
+    |> Enum.map(&decode/1)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp decode(""), do: nil
+  defp decode("[DONE]"), do: nil
+  defp decode(data), do: Jason.decode!(data)
 end
