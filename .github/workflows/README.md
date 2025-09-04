@@ -74,13 +74,11 @@ This repository uses GitHub Actions for automated testing and publishing to Hex.
 - `hex-api-key` (required): Hex API key for authentication
 - `dry-run` (default: 'false'): Perform dry run without publishing
 - `replace` (default: 'false'): Replace existing package version
-- `docs` (default: 'true'): Generate and publish documentation
 
 **Features:**
 - Compiles for production
-- Generates documentation with `mix docs`
 - Publishes package to Hex.pm
-- Publishes documentation to HexDocs
+- Documentation is automatically generated and published as part of `mix hex.publish`
 
 ## Setup Requirements
 
@@ -231,8 +229,6 @@ mix hex.publish --dry-run
 # Publish the package
 mix hex.publish
 
-# Publish documentation
-mix hex.docs
 ```
 
 ### Debugging Reusable Actions
@@ -243,6 +239,8 @@ To debug issues with reusable actions:
 2. Verify input parameters are correctly passed
 3. Test the action steps locally
 4. Check for any changes in dependencies or Elixir versions
+
+**Note:** `mix hex.publish` automatically generates and publishes documentation to HexDocs when you have `ex_doc` configured in your `mix.exs` dependencies. No separate documentation publishing step is needed.
 
 ## Benefits of Reusable Actions
 
