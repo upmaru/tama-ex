@@ -48,11 +48,25 @@ jobs:
           fi
           echo "✅ Version matches: $VERSION_IN_MIX"
 
-      - name: Validate Hex package
-        uses: ./.github/actions/publish-hex
+      - name: Setup Elixir for validation
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27.2"
+          elixir-version: "1.18.1"
+
+      - name: Validate Hex package (dry run)
+        if: github.event.inputs.dry-run == 'true'
+        run: |
+          mix deps.get
+          mix hex.publish --dry-run --yes
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+
+      - name: Publish to Hex (if not dry run)
+        if: github.event.inputs.dry-run == 'false'
+        uses: cucumber/action-publish-hex@v1.0.0
         with:
           hex-api-key: ${{ secrets.HEX_API_KEY }}
-          dry-run: "${{ github.event.inputs.dry-run }}"
 
       - name: Check changelog
         run: |
