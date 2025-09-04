@@ -1,15 +1,15 @@
-defmodule Tama.Neural.Class do
+defmodule TamaEx.Neural.Class do
   use Ecto.Schema
   import Ecto.Changeset
 
   @primary_key false
   embedded_schema do
-    field(:id, :string)
-    field(:space_id, :string)
-    field(:provision_state, :string)
-    field(:schema, :map)
-    field(:name, :string)
-    field(:description, :string)
+    field :id, :string
+    field :space_id, :string
+    field :provision_state, :string
+    field :schema, :map
+    field :name, :string
+    field :description, :string
   end
 
   @doc false
@@ -27,8 +27,8 @@ defmodule Tama.Neural.Class do
 
   ## Examples
 
-      iex> Tama.Neural.Class.parse(%{"id" => "123", "name" => "My Class"})
-      %Tama.Neural.Class{id: "123", name: "My Class"}
+      iex> TamaEx.Neural.Class.parse(%{"id" => "123", "name" => "My Class"})
+      %TamaEx.Neural.Class{id: "123", name: "My Class"}
 
   """
   def parse(attrs) when is_map(attrs) do

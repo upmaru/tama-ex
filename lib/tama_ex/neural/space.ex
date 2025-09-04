@@ -1,4 +1,4 @@
-defmodule Tama.Neural.Space do
+defmodule TamaEx.Neural.Space do
   @moduledoc """
   Embedded schema for Neural Space entities.
   """
@@ -8,11 +8,11 @@ defmodule Tama.Neural.Space do
 
   @primary_key false
   embedded_schema do
-    field(:id, :string)
-    field(:name, :string)
-    field(:slug, :string)
-    field(:type, :string)
-    field(:provision_state, :string)
+    field :id, :string
+    field :name, :string
+    field :slug, :string
+    field :type, :string
+    field :provision_state, :string
   end
 
   @doc false
@@ -30,8 +30,8 @@ defmodule Tama.Neural.Space do
 
   ## Examples
 
-      iex> Tama.Neural.Space.parse(%{"id" => "123", "name" => "My Space"})
-      %Tama.Neural.Space{id: "123", name: "My Space"}
+      iex> TamaEx.Neural.Space.parse(%{"id" => "123", "name" => "My Space"})
+      %TamaEx.Neural.Space{id: "123", name: "My Space"}
 
   """
   def parse(attrs) when is_map(attrs) do
