@@ -1,4 +1,4 @@
-defmodule TamaEx.Chat.Response do
+defmodule TamaEx.Messaging.Response do
   def create(client, body, options \\ []) do
     with {:ok, validated_client} <- TamaEx.validate_client(client, ["api"]) do
       path = "/chat/completions"
@@ -11,7 +11,7 @@ defmodule TamaEx.Chat.Response do
           Keyword.get(options, :callback)
         end
 
-      if stream? && is_nil(stream_handler) do
+      if stream? && is_nil(callback) do
         raise """
         Stream handler is required when streaming is true pass a stream handler into options
 
@@ -35,7 +35,9 @@ defmodule TamaEx.Chat.Response do
         )
 
       stream_handler = fn {:data, data}, context ->
-        Enum.each(parse(data), callback)
+        data
+        |> handle_chunk()
+        |> Enum.each(callback)
 
         {:cont, context}
       end

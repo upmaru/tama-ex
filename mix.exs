@@ -48,6 +48,7 @@ defmodule TamaEx.MixProject do
     [
       {:ecto, "~> 3.13"},
       {:req, "~> 0.5"},
+      {:bypass, "~> 2.1", only: :test},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false}
     ]
   end
