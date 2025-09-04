@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        elixir: ["1.18.1"]
+        otp: ["27.2"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: ./.github/actions/setup-elixir
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+          cache-key-suffix: "-release"
+
+      - name: Test Elixir
+        uses: ./.github/actions/test-elixir
+        with:
+          check-format: "true"
+          run-tests: "true"
+
+  publish:
+    name: Publish to Hex
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+
+    strategy:
+      matrix:
+        elixir: ["1.18.1"]
+        otp: ["27.2"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: ./.github/actions/setup-elixir
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+          cache-key-suffix: "-publish"
+
+      - name: Publish to Hex
+        uses: ./.github/actions/publish-hex
+        with:
+          hex-api-key: ${{ secrets.HEX_API_KEY }}
+          dry-run: "false"
+          docs: "true"
