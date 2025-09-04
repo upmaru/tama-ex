@@ -1,6 +1,6 @@
 # GitHub Actions Workflows
 
-This repository uses GitHub Actions for automated testing and publishing to Hex.pm with reusable composite actions.
+This repository uses GitHub Actions for automated testing and publishing to Hex.pm with reusable composite actions and the cucumber/action-publish-hex action.
 
 ## Workflows
 
@@ -22,8 +22,9 @@ This repository uses GitHub Actions for automated testing and publishing to Hex.
 **Actions:**
 - **Test Job**: Uses reusable actions for setup and testing
 - **Publish Job**: Runs only after tests pass
-  - Uses reusable `setup-elixir` action
-  - Uses reusable `publish-hex` action with documentation generation
+  - Uses `erlef/setup-beam` action for Elixir setup
+  - Uses `cucumber/action-publish-hex@v1.0.0` for publishing to Hex.pm
+  - Runs in a `Release` environment for additional security
 
 ### 3. Validate Release Workflow (`validate-release.yml`)
 
@@ -66,41 +67,57 @@ This repository uses GitHub Actions for automated testing and publishing to Hex.
 - Checks code formatting with `mix format --check-formatted`
 - Runs test suite with optional custom arguments
 
-### Publish to Hex (`publish-hex`)
+### Cucumber Publish Hex Action
 
-**Location:** `.github/actions/publish-hex/action.yml`
+**External Action:** `cucumber/action-publish-hex@v1.0.0`
 
 **Inputs:**
 - `hex-api-key` (required): Hex API key for authentication
-- `dry-run` (default: 'false'): Perform dry run without publishing
-- `replace` (default: 'false'): Replace existing package version
-- `docs` (default: 'true'): Generate and publish documentation
 
 **Features:**
+- Handles all aspects of Hex.pm publishing
+- Automatically installs dependencies
 - Compiles for production
-- Generates documentation with `mix docs`
 - Publishes package to Hex.pm
-- Publishes documentation to HexDocs
+- Documentation is automatically generated and published
+- Well-maintained third-party action
 
 ## Setup Requirements
 
-### 1. Hex API Key
+### 1. GitHub Environment Setup
 
-To enable automatic publishing to Hex.pm, you need to set up a `HEX_API_KEY` secret in your GitHub repository:
+The release workflow uses a `Release` environment for additional security. You need to:
+
+1. Create a `Release` environment in your GitHub repository:
+   - Go to your repository on GitHub
+   - Navigate to Settings → Environments
+   - Click "New environment"
+   - Name it "Release"
+   - Optionally add protection rules (e.g., required reviewers)
+
+### 2. Hex API Key
+
+To enable automatic publishing to Hex.pm, you need to set up a `HEX_API_KEY` secret:
 
 1. Generate a Hex API key:
    ```bash
    mix hex.user key generate
    ```
 
-2. Add the key to your GitHub repository secrets:
+2. Add the key to your GitHub environment secrets:
    - Go to your repository on GitHub
+   - Navigate to Settings → Environments → Release
+   - Click "Add secret"
+   - Name: `HEX_API_KEY`
+   - Value: Your generated Hex API key
+
+   Alternatively, you can add it as a repository secret:
    - Navigate to Settings → Secrets and variables → Actions
    - Click "New repository secret"
    - Name: `HEX_API_KEY`
    - Value: Your generated Hex API key
 
-### 2. Version Management
+### 3. Version Management
 
 Before creating a release tag, make sure to:
 
@@ -144,12 +161,13 @@ Before creating a release tag, make sure to:
    - Go to Actions → "Validate Release"
    - Click "Run workflow"
    - Enter the version number
-   - Choose dry-run option
+   - Choose dry-run option (performs `mix hex.publish --dry-run`)
    - Review validation results
 
 4. **Release**: Create and push a version tag
    - Tests run automatically
-   - If tests pass, package is automatically published to Hex.pm
+   - If tests pass, the Release environment is activated
+   - Package is automatically published to Hex.pm using cucumber/action-publish-hex
 
 ### Manual Validation
 
@@ -211,11 +229,15 @@ You can monitor the status of workflows in the "Actions" tab of your GitHub repo
 
 ### Common Issues
 
-1. **Hex publish fails**: Check that your `HEX_API_KEY` secret is correctly set
+1. **Hex publish fails**: 
+   - Check that your `HEX_API_KEY` secret is correctly set in the Release environment
+   - Ensure the Release environment is properly configured
+   - Verify you have push access to the Hex package
 2. **Tests fail**: Ensure all tests pass locally before tagging a release
 3. **Format check fails**: Run `mix format` locally and commit the changes
 4. **Version mismatch**: Ensure the version in `mix.exs` matches your tag
-5. **Cache issues**: Actions include cache keys with version suffixes to avoid conflicts
+5. **Environment access denied**: Check Release environment protection rules
+6. **Cache issues**: Actions include cache keys with version suffixes to avoid conflicts
 
 ### Manual Release
 
@@ -231,8 +253,6 @@ mix hex.publish --dry-run
 # Publish the package
 mix hex.publish
 
-# Publish documentation
-mix hex.docs
 ```
 
 ### Debugging Reusable Actions
@@ -244,10 +264,14 @@ To debug issues with reusable actions:
 3. Test the action steps locally
 4. Check for any changes in dependencies or Elixir versions
 
-## Benefits of Reusable Actions
+**Note:** `mix hex.publish` automatically generates and publishes documentation to HexDocs when you have `ex_doc` configured in your `mix.exs` dependencies. No separate documentation publishing step is needed.
 
-- **DRY Principle**: Avoid code duplication across workflows
+## Benefits of This Setup
+
+- **DRY Principle**: Avoid code duplication with reusable actions
 - **Consistency**: Ensure same steps are executed identically
-- **Maintainability**: Update logic in one place
-- **Flexibility**: Configurable inputs for different use cases
+- **Maintainability**: Update logic in one place for custom actions
+- **Security**: Release environment provides additional protection
+- **Reliability**: cucumber/action-publish-hex is a well-maintained third-party action
+- **Simplicity**: Less custom code to maintain for publishing
 - **Testing**: Easier to test and validate individual components
