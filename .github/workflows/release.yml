@@ -57,4 +57,3 @@ jobs:
         with:
           hex-api-key: ${{ secrets.HEX_API_KEY }}
           dry-run: "false"
-          docs: "true"

@@ -1,32 +1,23 @@
-name: 'Publish to Hex'
-description: 'Publish Elixir package to Hex.pm'
+name: "Publish to Hex"
+description: "Publish Elixir package to Hex.pm"
 inputs:
   hex-api-key:
-    description: 'Hex API key for authentication'
+    description: "Hex API key for authentication"
     required: true
   dry-run:
-    description: 'Whether to perform a dry run (no actual publishing)'
+    description: "Whether to perform a dry run (no actual publishing)"
     required: false
-    default: 'false'
+    default: "false"
   replace:
-    description: 'Whether to replace existing package version'
+    description: "Whether to replace existing package version"
     required: false
-    default: 'false'
-  docs:
-    description: 'Whether to publish documentation'
-    required: false
-    default: 'true'
+    default: "false"
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Compile for production
       run: MIX_ENV=prod mix compile
-      shell: bash
-
-    - name: Generate documentation
-      if: inputs.docs == 'true'
-      run: MIX_ENV=prod mix docs
       shell: bash
 
     - name: Publish to Hex (dry run)
@@ -46,11 +37,4 @@ runs:
         else
           mix hex.publish --yes
         fi
-      shell: bash
-
-    - name: Publish documentation
-      if: inputs.docs == 'true' && inputs.dry-run == 'false'
-      env:
-        HEX_API_KEY: ${{ inputs.hex-api-key }}
-      run: mix hex.docs
       shell: bash
