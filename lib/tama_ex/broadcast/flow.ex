@@ -4,7 +4,7 @@ defmodule TamaEx.Broadcast.Flow do
 
   @primary_key false
   embedded_schema do
-    field :id, :integer
+    field :id, :binary_id
     embeds_one :origin_entity, TamaEx.Broadcast.OriginEntity
   end
 

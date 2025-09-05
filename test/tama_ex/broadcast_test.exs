@@ -15,30 +15,38 @@ defmodule TamaEx.BroadcastTest do
           }
         },
         step: %{
-          id: 123,
+          id: "550e8400-e29b-41d4-a716-446655440001",
           current_state: "processing",
           index: 1,
           attempt: 1,
           concepts: [
-            %{id: 1, relation: "input", content: "some content"},
-            %{id: 2, relation: "output", content: "result content"}
+            %{
+              id: "550e8400-e29b-41d4-a716-446655440002",
+              relation: "input",
+              content: "some content"
+            },
+            %{
+              id: "550e8400-e29b-41d4-a716-446655440003",
+              relation: "output",
+              content: "result content"
+            }
           ],
           thought: %{
             chain: %{
-              id: 456,
+              id: "550e8400-e29b-41d4-a716-446655440004",
               name: "main_chain"
             },
             relation: "primary",
             index: 0
           },
           branch: %{
-            id: 789,
-            chain_id: 456,
+            id: "550e8400-e29b-41d4-a716-446655440005",
+            chain_id: "550e8400-e29b-41d4-a716-446655440004",
             current_state: "active",
             flow: %{
-              id: 101,
+              id: "550e8400-e29b-41d4-a716-446655440006",
               origin_entity: %{
-                id: 202,
+                id: "550e8400-e29b-41d4-a716-446655440007",
                 current_state: "ready",
                 identifier: "entity_abc"
               }
@@ -61,29 +69,29 @@ defmodule TamaEx.BroadcastTest do
       assert broadcast.event.metadata.parameters == %{"timeout" => 300}
 
       # Test step fields
-      assert broadcast.step.id == 123
+      assert broadcast.step.id == "550e8400-e29b-41d4-a716-446655440001"
       assert broadcast.step.current_state == "processing"
       assert broadcast.step.index == 1
       assert broadcast.step.attempt == 1
 
       # Test concepts
       assert length(broadcast.step.concepts) == 2
-      assert Enum.at(broadcast.step.concepts, 0).id == 1
+      assert Enum.at(broadcast.step.concepts, 0).id == "550e8400-e29b-41d4-a716-446655440002"
       assert Enum.at(broadcast.step.concepts, 0).relation == "input"
       assert Enum.at(broadcast.step.concepts, 0).content == "some content"
 
       # Test thought and chain
       assert broadcast.step.thought.relation == "primary"
       assert broadcast.step.thought.index == 0
-      assert broadcast.step.thought.chain.id == 456
+      assert broadcast.step.thought.chain.id == "550e8400-e29b-41d4-a716-446655440004"
       assert broadcast.step.thought.chain.name == "main_chain"
 
       # Test branch and flow
-      assert broadcast.step.branch.id == 789
-      assert broadcast.step.branch.chain_id == 456
+      assert broadcast.step.branch.id == "550e8400-e29b-41d4-a716-446655440005"
+      assert broadcast.step.branch.chain_id == "550e8400-e29b-41d4-a716-446655440004"
       assert broadcast.step.branch.current_state == "active"
-      assert broadcast.step.branch.flow.id == 101
-      assert broadcast.step.branch.flow.origin_entity.id == 202
+      assert broadcast.step.branch.flow.id == "550e8400-e29b-41d4-a716-446655440006"
+      assert broadcast.step.branch.flow.origin_entity.id == "550e8400-e29b-41d4-a716-446655440007"
       assert broadcast.step.branch.flow.origin_entity.current_state == "ready"
       assert broadcast.step.branch.flow.origin_entity.identifier == "entity_abc"
     end
@@ -100,27 +108,27 @@ defmodule TamaEx.BroadcastTest do
           }
         },
         step: %{
-          id: 1,
+          id: "550e8400-e29b-41d4-a716-446655440010",
           current_state: "pending",
           index: 0,
           attempt: 1,
           concepts: [],
           thought: %{
             chain: %{
-              id: 1,
+              id: "550e8400-e29b-41d4-a716-446655440011",
               name: "default_chain"
             },
             relation: "root",
             index: 0
           },
           branch: %{
-            id: 1,
-            chain_id: 1,
+            id: "550e8400-e29b-41d4-a716-446655440012",
+            chain_id: "550e8400-e29b-41d4-a716-446655440011",
             current_state: "initialized",
             flow: %{
-              id: 1,
+              id: "550e8400-e29b-41d4-a716-446655440013",
               origin_entity: %{
-                id: 1,
+                id: "550e8400-e29b-41d4-a716-446655440014",
                 current_state: "created",
                 identifier: "entity_001"
               }
@@ -164,27 +172,27 @@ defmodule TamaEx.BroadcastTest do
           }
         },
         step: %{
-          id: 456,
+          id: "550e8400-e29b-41d4-a716-446655440020",
           current_state: "failed",
           index: 5,
           attempt: 3,
           concepts: [],
           thought: %{
             chain: %{
-              id: 789,
+              id: "550e8400-e29b-41d4-a716-446655440021",
               name: "error_chain"
             },
             relation: "error",
             index: 1
           },
           branch: %{
-            id: 999,
-            chain_id: 789,
+            id: "550e8400-e29b-41d4-a716-446655440022",
+            chain_id: "550e8400-e29b-41d4-a716-446655440021",
             current_state: "error",
             flow: %{
-              id: 555,
+              id: "550e8400-e29b-41d4-a716-446655440023",
               origin_entity: %{
-                id: 333,
+                id: "550e8400-e29b-41d4-a716-446655440024",
                 current_state: "failed",
                 identifier: "failed_entity"
               }
@@ -216,32 +224,48 @@ defmodule TamaEx.BroadcastTest do
           }
         },
         step: %{
-          id: 999,
+          id: "550e8400-e29b-41d4-a716-446655440030",
           current_state: "analyzing",
           index: 3,
           attempt: 2,
           concepts: [
-            %{id: 1, relation: "input", content: "first input"},
-            %{id: 2, relation: "processing", content: "intermediate result"},
-            %{id: 3, relation: "output", content: "final output"},
-            %{id: 4, relation: "metadata", content: "process metadata"}
+            %{
+              id: "550e8400-e29b-41d4-a716-446655440031",
+              relation: "input",
+              content: "first input"
+            },
+            %{
+              id: "550e8400-e29b-41d4-a716-446655440032",
+              relation: "processing",
+              content: "intermediate result"
+            },
+            %{
+              id: "550e8400-e29b-41d4-a716-446655440033",
+              relation: "output",
+              content: "final output"
+            },
+            %{
+              id: "550e8400-e29b-41d4-a716-446655440034",
+              relation: "metadata",
+              content: "process metadata"
+            }
           ],
           thought: %{
             chain: %{
-              id: 100,
+              id: "550e8400-e29b-41d4-a716-446655440035",
               name: "analysis_chain"
             },
             relation: "analytical",
             index: 2
           },
           branch: %{
-            id: 200,
-            chain_id: 100,
+            id: "550e8400-e29b-41d4-a716-446655440036",
+            chain_id: "550e8400-e29b-41d4-a716-446655440035",
             current_state: "processing",
             flow: %{
-              id: 300,
+              id: "550e8400-e29b-41d4-a716-446655440037",
               origin_entity: %{
-                id: 400,
+                id: "550e8400-e29b-41d4-a716-446655440038",
                 current_state: "active",
                 identifier: "analysis_entity"
               }
@@ -279,29 +303,33 @@ defmodule TamaEx.BroadcastTest do
           }
         },
         step: %{
-          id: 123,
+          id: "550e8400-e29b-41d4-a716-446655440040",
           current_state: "processing",
           index: 1,
           attempt: 1,
           concepts: [
-            %{id: 1, relation: "input", content: "some content"}
+            %{
+              id: "550e8400-e29b-41d4-a716-446655440041",
+              relation: "input",
+              content: "some content"
+            }
           ],
           thought: %{
             chain: %{
-              id: 456,
+              id: "550e8400-e29b-41d4-a716-446655440042",
               name: "main_chain"
             },
             relation: "primary",
             index: 0
           },
           branch: %{
-            id: 789,
-            chain_id: 456,
+            id: "550e8400-e29b-41d4-a716-446655440043",
+            chain_id: "550e8400-e29b-41d4-a716-446655440042",
             current_state: "active",
             flow: %{
-              id: 101,
+              id: "550e8400-e29b-41d4-a716-446655440044",
               origin_entity: %{
-                id: 202,
+                id: "550e8400-e29b-41d4-a716-446655440045",
                 current_state: "ready",
                 identifier: "entity_abc"
               }
@@ -312,7 +340,7 @@ defmodule TamaEx.BroadcastTest do
 
       assert {:ok, broadcast} = Broadcast.parse(valid_attrs)
       assert broadcast.event.name == "step.updated"
-      assert broadcast.step.id == 123
+      assert broadcast.step.id == "550e8400-e29b-41d4-a716-446655440040"
       assert broadcast.step.thought.chain.name == "main_chain"
     end
 
@@ -328,27 +356,27 @@ defmodule TamaEx.BroadcastTest do
           }
         },
         step: %{
-          id: 1,
+          id: "550e8400-e29b-41d4-a716-446655440050",
           current_state: "pending",
           index: 0,
           attempt: 1,
           concepts: [],
           thought: %{
             chain: %{
-              id: 1,
+              id: "550e8400-e29b-41d4-a716-446655440051",
               name: "default_chain"
             },
             relation: "root",
             index: 0
           },
           branch: %{
-            id: 1,
-            chain_id: 1,
+            id: "550e8400-e29b-41d4-a716-446655440052",
+            chain_id: "550e8400-e29b-41d4-a716-446655440051",
             current_state: "initialized",
             flow: %{
-              id: 1,
+              id: "550e8400-e29b-41d4-a716-446655440053",
               origin_entity: %{
-                id: 1,
+                id: "550e8400-e29b-41d4-a716-446655440054",
                 current_state: "created",
                 identifier: "entity_001"
               }
@@ -384,7 +412,7 @@ defmodule TamaEx.BroadcastTest do
         step: %{
           # Missing required nested structures will still be handled gracefully
           # since our schemas don't enforce required validations
-          id: 1,
+          id: "550e8400-e29b-41d4-a716-446655440060",
           current_state: "test",
           index: 0,
           attempt: 1,
@@ -395,7 +423,7 @@ defmodule TamaEx.BroadcastTest do
       # This should still work since we don't have strict validations
       assert {:ok, broadcast} = Broadcast.parse(invalid_attrs)
       assert broadcast.event.name == "step.test"
-      assert broadcast.step.id == 1
+      assert broadcast.step.id == "550e8400-e29b-41d4-a716-446655440060"
     end
 
     # Helper function to extract error messages from changeset

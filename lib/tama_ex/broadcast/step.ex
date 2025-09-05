@@ -4,7 +4,7 @@ defmodule TamaEx.Broadcast.Step do
 
   @primary_key false
   embedded_schema do
-    field :id, :integer
+    field :id, :binary_id
     field :current_state, :string
     field :index, :integer
     field :attempt, :integer
