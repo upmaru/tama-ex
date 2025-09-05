@@ -4,7 +4,7 @@ defmodule TamaEx.Broadcast.Chain do
 
   @primary_key false
   embedded_schema do
-    field :id, :integer
+    field :id, :binary_id
     field :name, :string
   end
 

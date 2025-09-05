@@ -4,7 +4,7 @@ defmodule TamaEx.Broadcast.Concept do
 
   @primary_key false
   embedded_schema do
-    field :id, :integer
+    field :id, :binary_id
     field :relation, :string
     field :content, :string
   end

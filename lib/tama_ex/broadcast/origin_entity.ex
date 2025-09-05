@@ -4,7 +4,7 @@ defmodule TamaEx.Broadcast.OriginEntity do
 
   @primary_key false
   embedded_schema do
-    field :id, :integer
+    field :id, :binary_id
     field :current_state, :string
     field :identifier, :string
   end
