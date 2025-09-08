@@ -6,7 +6,7 @@ defmodule TamaEx.Broadcast.Concept do
   embedded_schema do
     field :id, :binary_id
     field :relation, :string
-    field :content, :string
+    field :content, :map
   end
 
   def changeset(concept, attrs) do

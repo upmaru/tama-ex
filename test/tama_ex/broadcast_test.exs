@@ -23,12 +23,12 @@ defmodule TamaEx.BroadcastTest do
             %{
               id: "550e8400-e29b-41d4-a716-446655440002",
               relation: "input",
-              content: "some content"
+              content: %{"content" => "some content"}
             },
             %{
               id: "550e8400-e29b-41d4-a716-446655440003",
               relation: "output",
-              content: "result content"
+              content: %{"content" => "result content"}
             }
           ],
           thought: %{
@@ -78,7 +78,7 @@ defmodule TamaEx.BroadcastTest do
       assert length(broadcast.step.concepts) == 2
       assert Enum.at(broadcast.step.concepts, 0).id == "550e8400-e29b-41d4-a716-446655440002"
       assert Enum.at(broadcast.step.concepts, 0).relation == "input"
-      assert Enum.at(broadcast.step.concepts, 0).content == "some content"
+      assert Enum.at(broadcast.step.concepts, 0).content == %{"content" => "some content"}
 
       # Test thought and chain
       assert broadcast.step.thought.relation == "primary"
@@ -232,22 +232,22 @@ defmodule TamaEx.BroadcastTest do
             %{
               id: "550e8400-e29b-41d4-a716-446655440031",
               relation: "input",
-              content: "first input"
+              content: %{"content" => "first input"}
             },
             %{
               id: "550e8400-e29b-41d4-a716-446655440032",
               relation: "processing",
-              content: "intermediate result"
+              content: %{"content" => "intermediate result"}
             },
             %{
               id: "550e8400-e29b-41d4-a716-446655440033",
               relation: "output",
-              content: "final output"
+              content: %{"content" => "final output"}
             },
             %{
               id: "550e8400-e29b-41d4-a716-446655440034",
               relation: "metadata",
-              content: "process metadata"
+              content: %{"content" => "process metadata"}
             }
           ],
           thought: %{
@@ -311,7 +311,7 @@ defmodule TamaEx.BroadcastTest do
             %{
               id: "550e8400-e29b-41d4-a716-446655440041",
               relation: "input",
-              content: "some content"
+              content: %{"content" => "some content"}
             }
           ],
           thought: %{
