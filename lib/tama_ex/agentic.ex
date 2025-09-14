@@ -1,7 +1,7 @@
-defmodule TamaEx.Messaging.Response do
-  def create(client, body, options \\ []) do
-    with {:ok, validated_client} <- TamaEx.validate_client(client, ["api"]) do
-      path = "/chat/completions"
+defmodule TamaEx.Agentic do
+  def create_message(client, body, options \\ []) do
+    with {:ok, validated_client} <- TamaEx.validate_client(client, ["agentic"]) do
+      path = "/messages"
       timeout = Keyword.get(options, :timeout) || 300_000
       headers = Keyword.get(options, :headers) || []
       stream? = Map.get(body, "stream") || Map.get(body, :stream)
