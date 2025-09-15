@@ -46,4 +46,27 @@ defmodule TamaEx.Perception do
       |> TamaEx.handle_response(Chain)
     end
   end
+
+  alias __MODULE__.Concept
+
+  def list_concepts(client, entity_id, options \\ []) do
+    with {:ok, validated_client} <- TamaEx.validate_client(client, ["perception"]) do
+      url = "/entities/#{entity_id}/concepts"
+
+      query = Keyword.get(options, :query, [])
+
+      req_options = [url: url, params: query]
+
+      req_options =
+        if Keyword.has_key?(options, :retry) do
+          Keyword.put(req_options, :retry, Keyword.get(options, :retry))
+        else
+          req_options
+        end
+
+      validated_client
+      |> Req.get(req_options)
+      |> TamaEx.handle_response(Concept)
+    end
+  end
 end
