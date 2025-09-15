@@ -2,17 +2,22 @@ defmodule TamaEx.Perception.Concept do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias TamaEx.Perception.Concept.Generator
+
   @primary_key false
   embedded_schema do
     field :id, :binary_id
     field :relation, :string
     field :content, :map
+
+    embeds_one :generator, Generator, on_replace: :update
   end
 
   def changeset(concept, attrs) do
     concept
     |> cast(attrs, [:id, :relation, :content])
     |> validate_required([:id, :relation, :content])
+    |> cast_embed(:generator)
   end
 
   @doc """

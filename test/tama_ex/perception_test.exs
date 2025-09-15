@@ -283,12 +283,22 @@ defmodule TamaEx.PerceptionTest do
             %{
               "id" => "concept_001",
               "relation" => "reply",
-              "content" => %{"text" => "Hello world"}
+              "content" => %{"text" => "Hello world"},
+              "generator" => %{
+                "type" => "module",
+                "reference" => "tama/classes/extraction",
+                "parameters" => %{"depth" => 1, "names" => nil, "types" => ["array"]}
+              }
             },
             %{
               "id" => "concept_002",
               "relation" => "mention",
-              "content" => %{"text" => "Another concept"}
+              "content" => %{"text" => "Another concept"},
+              "generator" => %{
+                "type" => "module",
+                "reference" => "tama/classes/extraction",
+                "parameters" => %{"depth" => 2, "names" => ["test"], "types" => ["string"]}
+              }
             }
           ]
         }
@@ -308,10 +318,28 @@ defmodule TamaEx.PerceptionTest do
       assert concept1.relation == "reply"
       assert concept1.content == %{"text" => "Hello world"}
 
+      assert concept1.generator.type == :module
+      assert concept1.generator.reference == "tama/classes/extraction"
+
+      assert concept1.generator.parameters == %{
+               "depth" => 1,
+               "names" => nil,
+               "types" => ["array"]
+             }
+
       assert %Concept{} = concept2
       assert concept2.id == "concept_002"
       assert concept2.relation == "mention"
       assert concept2.content == %{"text" => "Another concept"}
+
+      assert concept2.generator.type == :module
+      assert concept2.generator.reference == "tama/classes/extraction"
+
+      assert concept2.generator.parameters == %{
+               "depth" => 2,
+               "names" => ["test"],
+               "types" => ["string"]
+             }
     end
 
     test "handles empty list response", %{bypass: bypass, client: client} do
@@ -345,7 +373,12 @@ defmodule TamaEx.PerceptionTest do
             %{
               "id" => "concept_filtered",
               "relation" => "reply",
-              "content" => %{"filtered" => true}
+              "content" => %{"filtered" => true},
+              "generator" => %{
+                "type" => "module",
+                "reference" => "tama/classes/extraction",
+                "parameters" => %{"depth" => 1, "names" => nil, "types" => ["array"]}
+              }
             }
           ]
         }
@@ -435,7 +468,12 @@ defmodule TamaEx.PerceptionTest do
             %{
               "id" => "valid_concept",
               "relation" => "reply",
-              "content" => %{"text" => "Valid"}
+              "content" => %{"text" => "Valid"},
+              "generator" => %{
+                "type" => "module",
+                "reference" => "tama/classes/extraction",
+                "parameters" => %{"depth" => 1, "names" => nil, "types" => ["array"]}
+              }
             },
             %{
               # Missing required fields - should create empty Concept struct
@@ -456,11 +494,21 @@ defmodule TamaEx.PerceptionTest do
       assert valid_concept.id == "valid_concept"
       assert valid_concept.relation == "reply"
 
+      assert valid_concept.generator.type == :module
+      assert valid_concept.generator.reference == "tama/classes/extraction"
+
+      assert valid_concept.generator.parameters == %{
+               "depth" => 1,
+               "names" => nil,
+               "types" => ["array"]
+             }
+
       # Invalid concept should have nil values for required fields
       assert %Concept{} = invalid_concept
       assert invalid_concept.id == nil
       assert invalid_concept.relation == nil
       assert invalid_concept.content == nil
+      assert invalid_concept.generator == nil
     end
   end
 
@@ -469,7 +517,12 @@ defmodule TamaEx.PerceptionTest do
       concept_data = %{
         "id" => "concept_123",
         "relation" => "reply",
-        "content" => %{"text" => "Hello world", "metadata" => %{"score" => 0.95}}
+        "content" => %{"text" => "Hello world", "metadata" => %{"score" => 0.95}},
+        "generator" => %{
+          "type" => "module",
+          "reference" => "tama/classes/extraction",
+          "parameters" => %{"depth" => 1, "names" => nil, "types" => ["array"]}
+        }
       }
 
       concept = Concept.parse(concept_data)
@@ -477,6 +530,10 @@ defmodule TamaEx.PerceptionTest do
       assert concept.id == "concept_123"
       assert concept.relation == "reply"
       assert concept.content == %{"text" => "Hello world", "metadata" => %{"score" => 0.95}}
+
+      assert concept.generator.type == :module
+      assert concept.generator.reference == "tama/classes/extraction"
+      assert concept.generator.parameters == %{"depth" => 1, "names" => nil, "types" => ["array"]}
     end
 
     test "Concept.parse handles list of concepts" do
@@ -484,12 +541,22 @@ defmodule TamaEx.PerceptionTest do
         %{
           "id" => "concept_001",
           "relation" => "reply",
-          "content" => %{"text" => "First concept"}
+          "content" => %{"text" => "First concept"},
+          "generator" => %{
+            "type" => "module",
+            "reference" => "tama/classes/extraction",
+            "parameters" => %{"depth" => 1, "names" => nil, "types" => ["array"]}
+          }
         },
         %{
           "id" => "concept_002",
           "relation" => "mention",
-          "content" => %{"text" => "Second concept"}
+          "content" => %{"text" => "Second concept"},
+          "generator" => %{
+            "type" => "module",
+            "reference" => "tama/classes/extraction",
+            "parameters" => %{"depth" => 2, "names" => ["test"], "types" => ["string"]}
+          }
         }
       ]
 
@@ -512,11 +579,12 @@ defmodule TamaEx.PerceptionTest do
       assert concept.id == nil
       assert concept.relation == nil
       assert concept.content == nil
+      assert concept.generator == nil
     end
 
     test "Concept.parse handles JSON string input" do
       json_string =
-        ~s({"id": "concept_json", "relation": "reply", "content": {"text": "From JSON"}})
+        ~s({"id": "concept_json", "relation": "reply", "content": {"text": "From JSON"}, "generator": {"type": "module", "reference": "tama/classes/extraction", "parameters": {"depth": 1, "names": null, "types": ["array"]}}})
 
       concept = Concept.parse(json_string)
 
@@ -524,6 +592,10 @@ defmodule TamaEx.PerceptionTest do
       assert concept.id == "concept_json"
       assert concept.relation == "reply"
       assert concept.content == %{"text" => "From JSON"}
+
+      assert concept.generator.type == :module
+      assert concept.generator.reference == "tama/classes/extraction"
+      assert concept.generator.parameters == %{"depth" => 1, "names" => nil, "types" => ["array"]}
     end
 
     test "Concept.parse handles invalid JSON gracefully" do
@@ -538,7 +610,12 @@ defmodule TamaEx.PerceptionTest do
       valid_data = %{
         "id" => "concept_parse_bang",
         "relation" => "reply",
-        "content" => %{"test" => true}
+        "content" => %{"test" => true},
+        "generator" => %{
+          "type" => "module",
+          "reference" => "tama/classes/extraction",
+          "parameters" => %{"depth" => 1, "names" => nil, "types" => ["array"]}
+        }
       }
 
       concept = Concept.parse!(valid_data)
@@ -561,12 +638,18 @@ defmodule TamaEx.PerceptionTest do
       assert changeset.errors[:id]
       assert changeset.errors[:relation]
       assert changeset.errors[:content]
+      # Generator is embedded and validated separately, so no direct error here
 
       valid_changeset =
         Concept.changeset(%Concept{}, %{
           "id" => "valid_id",
           "relation" => "reply",
-          "content" => %{"valid" => true}
+          "content" => %{"valid" => true},
+          "generator" => %{
+            "type" => "module",
+            "reference" => "tama/classes/extraction",
+            "parameters" => %{"depth" => 1, "names" => nil, "types" => ["array"]}
+          }
         })
 
       assert valid_changeset.valid?
