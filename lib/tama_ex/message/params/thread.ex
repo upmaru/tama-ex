@@ -1,4 +1,4 @@
-defmodule TamaEx.Agentic.Message.Thread do
+defmodule TamaEx.Message.Params.Thread do
   use Ecto.Schema
   import Ecto.Changeset
 

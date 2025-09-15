@@ -1,6 +1,9 @@
 defmodule TamaEx.Agentic do
+  alias TamaEx.Message.Params, as: MessageParams
+
   def create_message(client, body, options \\ []) do
-    with {:ok, validated_client} <- TamaEx.validate_client(client, ["agentic"]) do
+    with {:ok, validated_client} <- TamaEx.validate_client(client, ["agentic"]),
+         {:ok, message_params} <- MessageParams.validate(body) do
       path = "/messages"
       timeout = Keyword.get(options, :timeout) || 300_000
       headers = Keyword.get(options, :headers) || []
@@ -29,7 +32,7 @@ defmodule TamaEx.Agentic do
         Req.merge(validated_client,
           method: :post,
           url: path,
-          json: body,
+          json: %{message: message_params},
           receive_timeout: timeout,
           headers: headers
         )

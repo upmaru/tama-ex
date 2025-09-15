@@ -2,8 +2,18 @@ defmodule TamaEx.Agentic.Message.Params do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive Jason.Encoder
+
   alias TamaEx.Agentic.Message.Author
   alias TamaEx.Agentic.Message.Thread
+
+  @valid_attrs [
+    :recipient,
+    :class,
+    :identifier,
+    :content,
+    :index
+  ]
 
   @primary_key false
   embedded_schema do
@@ -20,8 +30,8 @@ defmodule TamaEx.Agentic.Message.Params do
 
   def changeset(params, attrs) do
     params
-    |> cast(attrs, [:recipient, :class, :identifier, :content, :index])
-    |> validate_required([:recipient, :class, :identifier, :content, :index])
+    |> cast(attrs, @valid_attrs)
+    |> validate_required(@valid_attrs)
     |> cast_embed(:author, required: true)
     |> cast_embed(:thread, required: true)
   end

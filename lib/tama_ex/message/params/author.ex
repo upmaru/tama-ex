@@ -1,4 +1,4 @@
-defmodule TamaEx.Agentic.Message.Author do
+defmodule TamaEx.Message.Params.Author do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -14,6 +14,6 @@ defmodule TamaEx.Agentic.Message.Author do
   def changeset(author, attrs) do
     author
     |> cast(attrs, [:class, :identifier, :source])
-    |> validate_required([:class, :identifier, :source])
+    |> validate_required([:identifier, :source])
   end
 end
