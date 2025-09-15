@@ -1,7 +1,10 @@
-defmodule TamaEx.Messaging.Response do
-  def create(client, body, options \\ []) do
-    with {:ok, validated_client} <- TamaEx.validate_client(client, ["api"]) do
-      path = "/chat/completions"
+defmodule TamaEx.Agentic do
+  alias TamaEx.Message.Params, as: MessageParams
+
+  def create_message(client, body, options \\ []) do
+    with {:ok, validated_client} <- TamaEx.validate_client(client, ["agentic"]),
+         {:ok, message_params} <- MessageParams.validate(body) do
+      path = "/messages"
       timeout = Keyword.get(options, :timeout) || 300_000
       headers = Keyword.get(options, :headers) || []
       stream? = Map.get(body, "stream") || Map.get(body, :stream)
@@ -29,7 +32,7 @@ defmodule TamaEx.Messaging.Response do
         Req.merge(validated_client,
           method: :post,
           url: path,
-          json: body,
+          json: %{message: message_params},
           receive_timeout: timeout,
           headers: headers
         )
