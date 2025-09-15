@@ -206,9 +206,10 @@ defmodule TamaEx.AgenticTest do
           "identifier" => "thread-456"
         },
         "identifier" => "msg-stream",
-        "index" => 1,
-        "stream" => true
+        "index" => 1
       }
+
+      options = [stream: true]
 
       expected_message = """
       Stream handler is required when streaming is true pass a stream handler into options
@@ -223,7 +224,7 @@ defmodule TamaEx.AgenticTest do
       """
 
       assert_raise RuntimeError, expected_message, fn ->
-        Agentic.create_message(client, body)
+        Agentic.create_message(client, body, options)
       end
     end
 
@@ -234,7 +235,8 @@ defmodule TamaEx.AgenticTest do
         {:ok, body, conn} = Plug.Conn.read_body(conn)
         request_data = Jason.decode!(body)
 
-        assert request_data["message"]["stream"] == true
+        # Stream is now passed in options, not in the message body
+        assert is_map(request_data["message"])
 
         conn =
           conn
@@ -293,11 +295,10 @@ defmodule TamaEx.AgenticTest do
           "identifier" => "thread-456"
         },
         "identifier" => "msg-stream",
-        "index" => 1,
-        "stream" => true
+        "index" => 1
       }
 
-      options = [callback: callback]
+      options = [stream: true, callback: callback]
 
       response = Agentic.create_message(client, body, options)
 
@@ -342,7 +343,8 @@ defmodule TamaEx.AgenticTest do
         {:ok, body, conn} = Plug.Conn.read_body(conn)
         request_data = Jason.decode!(body)
 
-        assert request_data["message"]["stream"] == true
+        # Stream is now passed in options, not in the message body
+        assert is_map(request_data["message"])
 
         conn =
           conn
@@ -375,11 +377,10 @@ defmodule TamaEx.AgenticTest do
           identifier: "thread-atom"
         },
         identifier: "msg-atom",
-        index: 1,
-        stream: true
+        index: 1
       }
 
-      options = [callback: callback]
+      options = [stream: true, callback: callback]
 
       response = Agentic.create_message(client, body, options)
 
@@ -430,11 +431,10 @@ defmodule TamaEx.AgenticTest do
           "identifier" => "thread-mixed"
         },
         "identifier" => "msg-mixed",
-        "index" => 1,
-        "stream" => true
+        "index" => 1
       }
 
-      options = [callback: callback]
+      options = [stream: true, callback: callback]
 
       _response = Agentic.create_message(client, body, options)
 
