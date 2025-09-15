@@ -12,8 +12,7 @@ defmodule TamaEx.Message.Params do
     :class,
     :identifier,
     :content,
-    :index,
-    :stream
+    :index
   ]
 
   @primary_key false
@@ -23,7 +22,6 @@ defmodule TamaEx.Message.Params do
     field :identifier, :string
     field :content, :string
     field :index, :integer
-    field :stream, :boolean, default: false
 
     embeds_one :author, Author
     embeds_one :thread, Thread

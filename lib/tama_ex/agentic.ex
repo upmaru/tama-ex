@@ -7,7 +7,7 @@ defmodule TamaEx.Agentic do
       path = "/messages"
       timeout = Keyword.get(options, :timeout) || 300_000
       headers = Keyword.get(options, :headers) || []
-      stream? = Map.get(body, "stream") || Map.get(body, :stream)
+      stream? = Keyword.get(options, :stream)
 
       callback =
         if stream? do
@@ -32,7 +32,7 @@ defmodule TamaEx.Agentic do
         Req.merge(validated_client,
           method: :post,
           url: path,
-          json: %{message: message_params},
+          json: %{stream: stream?, message: message_params},
           receive_timeout: timeout,
           headers: headers
         )
