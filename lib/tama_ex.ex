@@ -36,7 +36,7 @@ defmodule TamaEx do
       ) do
     scopes = Keyword.get(options, :scopes) || ["provision.all"]
 
-    token = Base.url_encode64("#{client_id}:#{client_secret}", padding: false)
+    token = Base.url_encode64("#{client_id}:#{client_secret}")
 
     body = %{
       "grant_type" => "client_credentials",
