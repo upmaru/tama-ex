@@ -4,17 +4,87 @@ defmodule TamaEx do
   """
 
   @doc """
-  Creates a new HTTP client with the given base URL.
+  Creates a new HTTP client with authentication.
+
+  This function performs OAuth2 client credentials authentication and returns
+  an authenticated HTTP client. The base_url should be the root URL of the API server.
+
+  ## Parameters
+    - base_url - The root base URL for the API server (e.g., "https://api.example.com")
+    - client_id - The OAuth2 client ID
+    - client_secret - The OAuth2 client secret
+    - options - Optional configuration (e.g., scopes)
+
+  ## Returns
+    - `{:ok, %{client: client, expires_in: seconds}}` on successful authentication
+    - `{:error, reason}` on authentication failure
 
   ## Examples
 
-      iex> client = TamaEx.client(base_url: "https://api.example.com")
-      iex> client.options[:base_url]
-      "https://api.example.com"
+      # Create client with root URL
+      {:ok, %{client: client}} = TamaEx.client("https://api.example.com", "client_id", "client_secret")
+
+      # Add namespace for specific operations
+      namespaced_client = TamaEx.put_namespace(client, "provision")
 
   """
-  def client(base_url: base_url) do
-    Req.new(base_url: base_url)
+  def client(
+        base_url,
+        client_id,
+        client_secret,
+        options \\ []
+      ) do
+    scopes = Keyword.get(options, :scopes) || ["provision.all"]
+
+    token = Base.url_encode64("#{client_id}:#{client_secret}", padding: false)
+
+    body = %{
+      "grant_type" => "client_credentials",
+      "scope" => Enum.join(scopes, " ")
+    }
+
+    case Req.new(
+           base_url: base_url,
+           headers: [{"authorization", "Bearer #{token}"}]
+         )
+         |> Req.post(url: "/auth/tokens", json: body) do
+      {:ok, %Req.Response{status: 200, body: token}} ->
+        headers = [{"authorization", "Bearer #{token["access_token"]}"}]
+
+        {:ok,
+         %{client: Req.new(base_url: base_url, headers: headers), expires_in: token["expires_in"]}}
+
+      {:ok, %Req.Response{body: body}} ->
+        {:error, body}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Adds a namespace to the client's base URL.
+
+  ## Parameters
+    - client - The HTTP client
+    - namespace - The namespace to append (e.g., "provision", "ingest")
+
+  ## Returns
+    - Updated client with namespaced base URL
+
+  ## Examples
+
+      iex> client = Req.new(base_url: "https://api.example.com")
+      iex> namespaced_client = TamaEx.put_namespace(client, "provision")
+      iex> namespaced_client.options[:base_url]
+      "https://api.example.com/provision"
+
+  """
+  def put_namespace(%Req.Request{} = client, namespace) when is_binary(namespace) do
+    current_base_url = client.options[:base_url] || ""
+    new_base_url = "#{current_base_url}/#{namespace}"
+
+    Req.merge(client, base_url: new_base_url)
   end
 
   @doc """
@@ -70,12 +140,12 @@ defmodule TamaEx do
 
   ## Examples
 
-      iex> client = TamaEx.client(base_url: "https://api.example.com/provision")
+      iex> client = %Req.Request{options: %{base_url: "https://api.example.com/provision"}}
       iex> {:ok, validated_client} = TamaEx.validate_client(client, ["provision"])
       iex> validated_client == client
       true
 
-      iex> client = TamaEx.client(base_url: "https://api.example.com/ingest")
+      iex> client = %Req.Request{options: %{base_url: "https://api.example.com/ingest"}}
       iex> try do
       ...>   TamaEx.validate_client(client, ["provision"])
       ...> rescue

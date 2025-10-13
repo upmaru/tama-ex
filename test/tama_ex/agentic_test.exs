@@ -1,20 +1,19 @@
 defmodule TamaEx.AgenticTest do
   use ExUnit.Case
+  import TestHelpers
   doctest TamaEx.Agentic
 
   alias TamaEx.Agentic
 
   setup do
     bypass = Bypass.open()
-    client = TamaEx.client(base_url: "http://localhost:#{bypass.port}/agentic")
-
-    {:ok, bypass: bypass, client: client}
+    {:ok, bypass: bypass}
   end
 
   describe "create_message/3 - client validation" do
-    test "validates required client namespace", %{client: _client} do
+    test "validates required client namespace" do
       # Test with wrong namespace
-      client = TamaEx.client(base_url: "https://api.example.com/provision")
+      client = mock_client("provision")
 
       body = %{
         "recipient" => "user-123",
@@ -51,7 +50,8 @@ defmodule TamaEx.AgenticTest do
   end
 
   describe "create_message/3 - message validation" do
-    test "handles invalid message params", %{client: client} do
+    test "handles invalid message params" do
+      client = mock_client("agentic")
       # Test with missing required fields
       invalid_body = %{
         "content" => "Hello, world!"
@@ -63,7 +63,9 @@ defmodule TamaEx.AgenticTest do
       end
     end
 
-    test "validates message structure with missing author", %{client: client} do
+    test "validates message structure with missing author" do
+      client = mock_client("agentic")
+
       invalid_body = %{
         "recipient" => "user-123",
         "content" => "Hello, world!",
@@ -79,7 +81,10 @@ defmodule TamaEx.AgenticTest do
   end
 
   describe "create_message/3 - non-streaming requests" do
-    test "handles successful non-streaming response", %{bypass: bypass, client: client} do
+    test "handles successful non-streaming response", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("agentic", base_url)
+
       Bypass.expect(bypass, "POST", "/agentic/messages", fn conn ->
         {:ok, body, conn} = Plug.Conn.read_body(conn)
         request_data = Jason.decode!(body)
@@ -138,7 +143,10 @@ defmodule TamaEx.AgenticTest do
       assert response_body["message"]["content"] == "Hello, world!"
     end
 
-    test "handles non-streaming request with custom options", %{bypass: bypass, client: client} do
+    test "handles non-streaming request with custom options", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("agentic", base_url)
+
       Bypass.expect(bypass, "POST", "/agentic/messages", fn conn ->
         # Check headers
         assert Plug.Conn.get_req_header(conn, "authorization") == ["Bearer test-token"]
@@ -194,7 +202,9 @@ defmodule TamaEx.AgenticTest do
   end
 
   describe "create_message/3 - streaming requests" do
-    test "raises error when stream is true but no callback provided", %{client: client} do
+    test "raises error when stream is true but no callback provided" do
+      client = mock_client("agentic")
+
       body = %{
         "recipient" => "user-123",
         "content" => "Hello, streaming world!",
@@ -228,7 +238,9 @@ defmodule TamaEx.AgenticTest do
       end
     end
 
-    test "handles streaming response with callback", %{bypass: bypass, client: client} do
+    test "handles streaming response with callback", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("agentic", base_url)
       test_pid = self()
 
       Bypass.expect(bypass, "POST", "/agentic/messages", fn conn ->
@@ -336,7 +348,9 @@ defmodule TamaEx.AgenticTest do
       assert final_chunk["message"]["final_content"] == "Hello streaming world!"
     end
 
-    test "handles streaming with atom keys in body", %{bypass: bypass, client: client} do
+    test "handles streaming with atom keys in body", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("agentic", base_url)
       test_pid = self()
 
       Bypass.expect(bypass, "POST", "/agentic/messages", fn conn ->
@@ -395,7 +409,9 @@ defmodule TamaEx.AgenticTest do
   end
 
   describe "data parsing functionality" do
-    test "handles mixed streaming data formats", %{bypass: bypass, client: client} do
+    test "handles mixed streaming data formats", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("agentic", base_url)
       test_pid = self()
 
       Bypass.expect(bypass, "POST", "/agentic/messages", fn conn ->
@@ -449,7 +465,9 @@ defmodule TamaEx.AgenticTest do
   end
 
   describe "timeout handling" do
-    test "uses default timeout when not specified", %{bypass: bypass, client: client} do
+    test "uses default timeout when not specified", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("agentic", base_url)
       # We can't directly test the timeout value, but we can verify the request is made
       Bypass.expect(bypass, "POST", "/agentic/messages", fn conn ->
         # Simulate a request that would benefit from long timeout
@@ -486,7 +504,10 @@ defmodule TamaEx.AgenticTest do
       assert response_body["id"] == "timeout-test-123"
     end
 
-    test "uses custom timeout when specified", %{bypass: bypass, client: client} do
+    test "uses custom timeout when specified", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("agentic", base_url)
+
       Bypass.expect(bypass, "POST", "/agentic/messages", fn conn ->
         response_data = %{
           id: "custom-timeout-456",
