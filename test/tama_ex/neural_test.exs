@@ -1,5 +1,6 @@
 defmodule TamaEx.NeuralTest do
   use ExUnit.Case
+  import TestHelpers
   # Disable doctests due to undefined client variable in examples
   # doctest TamaEx.Neural
 
@@ -27,11 +28,6 @@ defmodule TamaEx.NeuralTest do
       name: "Test Class",
       provision_state: "active"
     }
-  end
-
-  # Test helper for creating a mock client
-  defp mock_client(namespace) do
-    TamaEx.client(base_url: "https://api.example.com/#{namespace}")
   end
 
   describe "get_space/2" do

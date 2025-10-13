@@ -1,5 +1,6 @@
 defmodule TamaEx.MemoryTest do
   use ExUnit.Case
+  import TestHelpers
   doctest TamaEx.Memory
 
   alias TamaEx.Memory
@@ -14,11 +15,6 @@ defmodule TamaEx.MemoryTest do
       name: "Test Class",
       provision_state: "active"
     }
-  end
-
-  # Test helper for creating a mock client
-  defp mock_client(namespace) do
-    TamaEx.client(base_url: "https://api.example.com/#{namespace}")
   end
 
   describe "create_entity/3" do

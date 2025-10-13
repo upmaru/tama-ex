@@ -1,5 +1,6 @@
 defmodule TamaEx.PerceptionTest do
   use ExUnit.Case
+  import TestHelpers
   doctest TamaEx.Perception
 
   alias TamaEx.Perception
@@ -18,14 +19,13 @@ defmodule TamaEx.PerceptionTest do
     }
   end
 
-  # Test helper for creating a mock client
-  defp mock_client(namespace) do
-    TamaEx.client(base_url: "https://api.example.com/#{namespace}")
-  end
-
   setup do
-    bypass = Bypass.open()
-    client = TamaEx.client(base_url: "http://localhost:#{bypass.port}/perception")
+    {bypass, base_url} = setup_bypass_with_auth()
+
+    {:ok, %{client: base_client}} =
+      TamaEx.client(base_url, "test_client", "test_secret")
+
+    client = TamaEx.put_namespace(base_client, "perception")
 
     {:ok, bypass: bypass, client: client}
   end
@@ -266,7 +266,7 @@ defmodule TamaEx.PerceptionTest do
 
   describe "list_concepts/3" do
     test "validates required client namespace", %{bypass: bypass} do
-      client = TamaEx.client(base_url: "http://localhost:#{bypass.port}/ingest")
+      client = mock_client("ingest", "http://localhost:#{bypass.port}")
       entity_id = "entity_123"
 
       assert_raise ArgumentError, ~r/Invalid client namespace/, fn ->
@@ -444,7 +444,7 @@ defmodule TamaEx.PerceptionTest do
 
     test "handles network errors" do
       # Use an invalid port to simulate network error
-      invalid_client = TamaEx.client(base_url: "http://localhost:99999/perception")
+      invalid_client = mock_client("perception", "http://localhost:99999")
 
       # The connection error may be raised as an exception instead of returning error tuple
       result =

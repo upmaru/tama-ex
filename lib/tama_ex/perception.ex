@@ -15,7 +15,7 @@ defmodule TamaEx.Perception do
 
   ## Examples
 
-      iex> client = TamaEx.client(base_url: "https://api.example.com/provision")
+      iex> client = %Req.Request{options: %{base_url: "https://api.example.com/provision"}}
       iex> {:ok, _} = TamaEx.validate_client(client, ["provision"])
       iex> is_binary("space_123") and is_binary("my-chain")
       true
