@@ -27,9 +27,9 @@ defmodule TamaEx.Memory do
 
   """
   def create_entity(client, %TamaEx.Neural.Class{id: class_id}, attrs) when is_binary(class_id) do
-    with {:ok, validated_client} <- TamaEx.validate_client(client, ["ingest"]),
+    with {:ok, validated_client} <- TamaEx.validate_client(client, ["memory"]),
          {:ok, validated_params} <- EntityParams.validate(attrs) do
-      url = "/memory/classes/#{class_id}/entities"
+      url = "/classes/#{class_id}/entities"
 
       validated_client
       |> Req.post(url: url, json: %{entity: validated_params})
