@@ -8,6 +8,11 @@ defmodule TamaEx.MemoryTest do
   alias TamaEx.Memory.Entity.Params, as: EntityParams
   alias TamaEx.Neural.Class
 
+  setup do
+    bypass = Bypass.open()
+    {:ok, bypass: bypass}
+  end
+
   # Test helper for creating a mock class
   defp mock_class(id \\ "class_123") do
     %Class{
@@ -17,7 +22,247 @@ defmodule TamaEx.MemoryTest do
     }
   end
 
-  describe "create_entity/3" do
+  describe "create_entity/3 - bypass integration" do
+    test "successfully creates entity with bypass", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("test_class_123")
+
+      attrs = %{
+        "identifier" => "test-entity-bypass",
+        "record" => %{"name" => "Test Entity", "value" => 42},
+        "validate_record" => true
+      }
+
+      expected_response = %{
+        "data" => %{
+          "id" => "entity_created_456",
+          "class_id" => "test_class_123",
+          "current_state" => "active",
+          "identifier" => "test-entity-bypass"
+        }
+      }
+
+      Bypass.expect(bypass, "POST", "/memory/classes/test_class_123/entities", fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        request_data = Jason.decode!(body)
+
+        # Verify the request structure
+        assert request_data["entity"]["identifier"] == "test-entity-bypass"
+        assert request_data["entity"]["record"]["name"] == "Test Entity"
+        assert request_data["entity"]["record"]["value"] == 42
+        assert request_data["entity"]["validate_record"] == true
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(201, Jason.encode!(expected_response))
+      end)
+
+      # Make the actual API call
+      assert {:ok, %Entity{} = entity} = Memory.create_entity(client, class, attrs)
+
+      # Verify the parsed entity
+      assert entity.id == "entity_created_456"
+      assert entity.class_id == "test_class_123"
+      assert entity.current_state == "active"
+      assert entity.identifier == "test-entity-bypass"
+    end
+
+    test "handles API error responses with bypass", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("error_class_123")
+
+      attrs = %{
+        "identifier" => "error-entity",
+        "record" => %{"invalid" => "data"}
+      }
+
+      error_response = %{
+        "error" => %{
+          "message" => "Validation failed",
+          "details" => %{
+            "record" => ["is invalid"]
+          }
+        }
+      }
+
+      Bypass.expect(bypass, "POST", "/memory/classes/error_class_123/entities", fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        request_data = Jason.decode!(body)
+
+        assert request_data["entity"]["identifier"] == "error-entity"
+        assert request_data["entity"]["record"]["invalid"] == "data"
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(422, Jason.encode!(error_response))
+      end)
+
+      # Make the actual API call and expect an error
+      assert {:error, _error} = Memory.create_entity(client, class, attrs)
+    end
+
+    test "handles server errors with bypass", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("server_error_class_123")
+
+      attrs = %{
+        "identifier" => "server-error-entity",
+        "record" => %{"data" => "test"}
+      }
+
+      # Simulate server error
+      Bypass.expect(bypass, "POST", "/memory/classes/server_error_class_123/entities", fn conn ->
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(500, Jason.encode!(%{"error" => "Internal server error"}))
+      end)
+
+      # Make the actual API call and expect an error
+      assert {:error, _error} = Memory.create_entity(client, class, attrs)
+    end
+
+    test "handles different class IDs in URL construction", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+
+      test_cases = [
+        {"simple", "simple"},
+        {"class_with_underscores", "class_with_underscores"},
+        {"class-with-dashes", "class-with-dashes"},
+        {"Class123", "Class123"}
+      ]
+
+      Enum.each(test_cases, fn {class_id, expected_url_part} ->
+        class = mock_class(class_id)
+        attrs = %{"identifier" => "test-#{class_id}", "record" => %{}}
+
+        expected_response = %{
+          "data" => %{
+            "id" => "entity_#{class_id}",
+            "class_id" => class_id,
+            "current_state" => "active",
+            "identifier" => "test-#{class_id}"
+          }
+        }
+
+        Bypass.expect_once(
+          bypass,
+          "POST",
+          "/memory/classes/#{expected_url_part}/entities",
+          fn conn ->
+            conn
+            |> Plug.Conn.put_resp_content_type("application/json")
+            |> Plug.Conn.resp(201, Jason.encode!(expected_response))
+          end
+        )
+
+        assert {:ok, %Entity{} = entity} = Memory.create_entity(client, class, attrs)
+        assert entity.class_id == class_id
+        assert entity.identifier == "test-#{class_id}"
+      end)
+    end
+
+    test "validates request headers and content type", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("headers_test_123")
+
+      attrs = %{
+        "identifier" => "headers-test",
+        "record" => %{"test" => "data"}
+      }
+
+      Bypass.expect(bypass, "POST", "/memory/classes/headers_test_123/entities", fn conn ->
+        # Verify headers
+        assert Plug.Conn.get_req_header(conn, "authorization") == ["Bearer mock_token"]
+        assert Plug.Conn.get_req_header(conn, "content-type") == ["application/json"]
+
+        expected_response = %{
+          "data" => %{
+            "id" => "headers_entity_123",
+            "class_id" => "headers_test_123",
+            "current_state" => "active",
+            "identifier" => "headers-test"
+          }
+        }
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(201, Jason.encode!(expected_response))
+      end)
+
+      assert {:ok, %Entity{}} = Memory.create_entity(client, class, attrs)
+    end
+
+    test "handles complex record structures with bypass", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("complex_class_123")
+
+      complex_record = %{
+        "user" => %{
+          "name" => "John Doe",
+          "age" => 30,
+          "preferences" => %{
+            "theme" => "dark",
+            "notifications" => true
+          }
+        },
+        "metadata" => %{
+          "created_at" => "2023-01-01T00:00:00Z",
+          "tags" => ["important", "test"]
+        }
+      }
+
+      attrs = %{
+        "identifier" => "complex-entity",
+        "record" => complex_record,
+        "validate_record" => false
+      }
+
+      expected_response = %{
+        "data" => %{
+          "id" => "complex_entity_789",
+          "class_id" => "complex_class_123",
+          "current_state" => "active",
+          "identifier" => "complex-entity"
+        }
+      }
+
+      Bypass.expect(bypass, "POST", "/memory/classes/complex_class_123/entities", fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        request_data = Jason.decode!(body)
+
+        # Verify the complex record structure is preserved
+        assert request_data["entity"]["identifier"] == "complex-entity"
+        assert request_data["entity"]["record"]["user"]["name"] == "John Doe"
+        assert request_data["entity"]["record"]["user"]["age"] == 30
+        assert request_data["entity"]["record"]["user"]["preferences"]["theme"] == "dark"
+        assert request_data["entity"]["record"]["user"]["preferences"]["notifications"] == true
+
+        assert request_data["entity"]["record"]["metadata"]["created_at"] ==
+                 "2023-01-01T00:00:00Z"
+
+        assert request_data["entity"]["record"]["metadata"]["tags"] == ["important", "test"]
+        assert request_data["entity"]["validate_record"] == false
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(201, Jason.encode!(expected_response))
+      end)
+
+      assert {:ok, %Entity{} = entity} = Memory.create_entity(client, class, attrs)
+      assert entity.id == "complex_entity_789"
+      assert entity.class_id == "complex_class_123"
+      assert entity.current_state == "active"
+      assert entity.identifier == "complex-entity"
+    end
+  end
+
+  describe "create_entity/3 - unit tests" do
     test "creates entity with valid parameters" do
       _client = mock_client("ingest")
       _class = mock_class()
