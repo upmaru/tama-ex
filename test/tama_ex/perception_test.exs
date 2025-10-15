@@ -155,6 +155,120 @@ defmodule TamaEx.PerceptionTest do
     end
   end
 
+  describe "get_chain/2 with chain ID" do
+    setup do
+      {bypass_provision, base_url_provision} = setup_bypass_with_auth()
+
+      {:ok, %{client: base_client}} =
+        TamaEx.client(base_url_provision, "test_client", "test_secret")
+
+      # Manually disable retries on the client
+      base_client_no_retry = %{base_client | options: Map.put(base_client.options, :retry, false)}
+      provision_client = TamaEx.put_namespace(base_client_no_retry, "provision")
+
+      {:ok, bypass: bypass_provision, provision_client: provision_client}
+    end
+
+    test "validates required client namespace" do
+      client = mock_client("ingest")
+      chain_id = "chain_123"
+
+      assert_raise ArgumentError, ~r/Invalid client namespace/, fn ->
+        Perception.get_chain(client, chain_id)
+      end
+    end
+
+    test "validates chain_id parameter type" do
+      client = mock_client("provision")
+
+      # Test with non-string chain_id
+      assert_raise FunctionClauseError, fn ->
+        Perception.get_chain(client, 123)
+      end
+    end
+
+    test "handles successful chain retrieval", %{
+      bypass: bypass_provision,
+      provision_client: provision_client
+    } do
+      chain_id = "chain_123"
+
+      Bypass.expect(
+        bypass_provision,
+        "GET",
+        "/provision/perception/chains/#{chain_id}",
+        fn conn ->
+          response_data = %{
+            "data" => %{
+              "id" => "chain_123",
+              "name" => "Test Chain",
+              "slug" => "test-chain",
+              "provision_state" => "active",
+              "space_id" => "space_456"
+            }
+          }
+
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.resp(200, Jason.encode!(response_data))
+        end
+      )
+
+      assert {:ok, chain} = Perception.get_chain(provision_client, chain_id)
+      assert %Chain{} = chain
+      assert chain.id == "chain_123"
+      assert chain.name == "Test Chain"
+      assert chain.slug == "test-chain"
+      assert chain.provision_state == "active"
+      assert chain.space_id == "space_456"
+    end
+
+    test "handles 404 not found", %{bypass: bypass_provision, provision_client: provision_client} do
+      chain_id = "nonexistent_chain"
+
+      Bypass.expect(
+        bypass_provision,
+        "GET",
+        "/provision/perception/chains/#{chain_id}",
+        fn conn ->
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.resp(404, Jason.encode!(%{"error" => "Chain not found"}))
+        end
+      )
+
+      assert {:error, :not_found} = Perception.get_chain(provision_client, chain_id)
+    end
+
+    test "handles server errors", %{bypass: bypass_provision, provision_client: provision_client} do
+      chain_id = "chain_123"
+
+      Bypass.expect(
+        bypass_provision,
+        "GET",
+        "/provision/perception/chains/#{chain_id}",
+        fn conn ->
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.resp(500, Jason.encode!(%{"error" => "Internal server error"}))
+        end
+      )
+
+      assert {:error, {:http_error, 500, %{"error" => "Internal server error"}}} =
+               Perception.get_chain(provision_client, chain_id)
+    end
+
+    test "handles network errors", %{bypass: bypass_provision, provision_client: provision_client} do
+      chain_id = "chain_123"
+
+      # Close the bypass to simulate network error
+      Bypass.down(bypass_provision)
+
+      assert {:error, {:request_failed, %Req.TransportError{reason: :econnrefused}}} =
+               Perception.get_chain(provision_client, chain_id)
+    end
+  end
+
   describe "Chain struct behavior" do
     test "Chain.parse handles valid data" do
       api_response_data = %{

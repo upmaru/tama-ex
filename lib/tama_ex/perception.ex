@@ -47,6 +47,16 @@ defmodule TamaEx.Perception do
     end
   end
 
+  def get_chain(client, id) when is_binary(id) do
+    with {:ok, validated_client} <- TamaEx.validate_client(client, ["provision"]) do
+      url = "/perception/chains/#{id}"
+
+      validated_client
+      |> Req.get(url: url)
+      |> TamaEx.handle_response(Chain)
+    end
+  end
+
   alias __MODULE__.Concept
 
   def list_concepts(client, entity_id, options \\ []) do
