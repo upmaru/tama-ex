@@ -66,5 +66,13 @@ defmodule TamaEx.Agentic do
 
   defp decode(""), do: nil
   defp decode("[DONE]"), do: nil
-  defp decode(data), do: Jason.decode!(data)
+
+  defp decode(data) do
+    data
+    |> Jason.decode()
+    |> case do
+      {:ok, decoded} -> decoded
+      {:error, _} -> nil
+    end
+  end
 end
