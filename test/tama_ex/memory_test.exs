@@ -262,6 +262,61 @@ defmodule TamaEx.MemoryTest do
     end
   end
 
+  describe "get_entity/3 - bypass integration" do
+    test "successfully retrieves an entity by identifier", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("class_for_get")
+      entity_identifier = "entity-identifier-123"
+
+      expected_response = %{
+        "data" => %{
+          "id" => "entity_returned_123",
+          "class_id" => "class_for_get",
+          "current_state" => "active",
+          "identifier" => entity_identifier
+        }
+      }
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/memory/classes/class_for_get/entities/#{entity_identifier}",
+        fn conn ->
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.resp(200, Jason.encode!(expected_response))
+        end
+      )
+
+      assert {:ok, %Entity{} = entity} = Memory.get_entity(client, class, entity_identifier)
+      assert entity.id == "entity_returned_123"
+      assert entity.class_id == "class_for_get"
+      assert entity.current_state == "active"
+      assert entity.identifier == entity_identifier
+    end
+
+    test "returns error tuple when entity is not found", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("missing_class")
+      entity_identifier = "missing-entity"
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/memory/classes/missing_class/entities/#{entity_identifier}",
+        fn conn ->
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.resp(404, Jason.encode!(%{"error" => "not found"}))
+        end
+      )
+
+      assert {:error, :not_found} = Memory.get_entity(client, class, entity_identifier)
+    end
+  end
+
   describe "create_entity/3 - unit tests" do
     test "creates entity with valid parameters" do
       _client = mock_client("ingest")
@@ -363,6 +418,35 @@ defmodule TamaEx.MemoryTest do
       assert expected_json[:entity]["identifier"] == "test-entity"
       assert expected_json[:entity]["record"] == %{"name" => "Test"}
       assert expected_json[:entity]["validate_record"] == false
+    end
+  end
+
+  describe "get_entity/3 - unit tests" do
+    test "validates required client namespace" do
+      client = mock_client("provision")
+      class = mock_class()
+
+      assert_raise ArgumentError, ~r/Invalid client namespace/, fn ->
+        Memory.get_entity(client, class, "entity")
+      end
+    end
+
+    test "validates class id is a binary" do
+      client = mock_client("memory")
+      invalid_class = %Class{id: nil, name: "Invalid", provision_state: "active"}
+
+      assert_raise FunctionClauseError, fn ->
+        Memory.get_entity(client, invalid_class, "entity")
+      end
+    end
+
+    test "validates identifier is a binary" do
+      client = mock_client("memory")
+      class = mock_class()
+
+      assert_raise FunctionClauseError, fn ->
+        Memory.get_entity(client, class, 123)
+      end
     end
   end
 

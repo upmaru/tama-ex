@@ -36,4 +36,23 @@ defmodule TamaEx.Memory do
       |> TamaEx.handle_response(Entity)
     end
   end
+
+  @doc """
+  Retrieves an entity for a class by ID or identifier.
+
+  ## Parameters
+    - client - The HTTP client
+    - class - The Class struct containing the class_id
+    - id_or_identifier - Entity ID or identifier
+  """
+  def get_entity(client, %TamaEx.Neural.Class{id: class_id}, id_or_identifier)
+      when is_binary(class_id) and is_binary(id_or_identifier) do
+    with {:ok, validated_client} <- TamaEx.validate_client(client, ["memory"]) do
+      url = "/classes/#{class_id}/entities/#{id_or_identifier}"
+
+      validated_client
+      |> Req.get(url: url)
+      |> TamaEx.handle_response(Entity)
+    end
+  end
 end
