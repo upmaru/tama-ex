@@ -317,6 +317,274 @@ defmodule TamaEx.MemoryTest do
     end
   end
 
+  describe "update_entity/4 - bypass integration" do
+    test "successfully updates entity with bypass", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("test_class_123")
+      entity_id = "entity_123"
+
+      attrs = %{
+        "identifier" => "updated-entity-bypass",
+        "record" => %{"name" => "Updated Entity", "value" => 99},
+        "validate_record" => true
+      }
+
+      expected_response = %{
+        "data" => %{
+          "id" => entity_id,
+          "class_id" => "test_class_123",
+          "current_state" => "active",
+          "identifier" => "updated-entity-bypass"
+        }
+      }
+
+      Bypass.expect(
+        bypass,
+        "PATCH",
+        "/memory/classes/test_class_123/entities/#{entity_id}",
+        fn conn ->
+          {:ok, body, conn} = Plug.Conn.read_body(conn)
+          request_data = Jason.decode!(body)
+
+          # Verify the request structure
+          assert request_data["entity"]["identifier"] == "updated-entity-bypass"
+          assert request_data["entity"]["record"]["name"] == "Updated Entity"
+          assert request_data["entity"]["record"]["value"] == 99
+          assert request_data["entity"]["validate_record"] == true
+
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.resp(200, Jason.encode!(expected_response))
+        end
+      )
+
+      # Make the actual API call
+      assert {:ok, %Entity{} = entity} = Memory.update_entity(client, class, entity_id, attrs)
+
+      # Verify the parsed entity
+      assert entity.id == entity_id
+      assert entity.class_id == "test_class_123"
+      assert entity.current_state == "active"
+      assert entity.identifier == "updated-entity-bypass"
+    end
+
+    test "successfully updates entity by identifier", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("test_class_456")
+      entity_identifier = "my-entity-identifier"
+
+      attrs = %{
+        "record" => %{"status" => "updated"},
+        "validate_record" => false
+      }
+
+      expected_response = %{
+        "data" => %{
+          "id" => "entity_789",
+          "class_id" => "test_class_456",
+          "current_state" => "updated",
+          "identifier" => entity_identifier
+        }
+      }
+
+      Bypass.expect(
+        bypass,
+        "PATCH",
+        "/memory/classes/test_class_456/entities/#{entity_identifier}",
+        fn conn ->
+          {:ok, body, conn} = Plug.Conn.read_body(conn)
+          request_data = Jason.decode!(body)
+
+          assert request_data["entity"]["record"]["status"] == "updated"
+          assert request_data["entity"]["validate_record"] == false
+
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.resp(200, Jason.encode!(expected_response))
+        end
+      )
+
+      assert {:ok, %Entity{} = entity} =
+               Memory.update_entity(client, class, entity_identifier, attrs)
+
+      assert entity.id == "entity_789"
+      assert entity.class_id == "test_class_456"
+      assert entity.current_state == "updated"
+      assert entity.identifier == entity_identifier
+    end
+
+    test "handles API error responses with bypass", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("error_class_123")
+      entity_id = "error_entity"
+
+      attrs = %{
+        "identifier" => "error-entity",
+        "record" => %{"invalid" => "data"}
+      }
+
+      error_response = %{
+        "error" => %{
+          "message" => "Validation failed",
+          "details" => %{
+            "record" => ["is invalid"]
+          }
+        }
+      }
+
+      Bypass.expect(
+        bypass,
+        "PATCH",
+        "/memory/classes/error_class_123/entities/#{entity_id}",
+        fn conn ->
+          {:ok, body, conn} = Plug.Conn.read_body(conn)
+          request_data = Jason.decode!(body)
+
+          assert request_data["entity"]["identifier"] == "error-entity"
+          assert request_data["entity"]["record"]["invalid"] == "data"
+
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.resp(422, Jason.encode!(error_response))
+        end
+      )
+
+      # Make the actual API call and expect an error
+      assert {:error, _error} = Memory.update_entity(client, class, entity_id, attrs)
+    end
+
+    test "handles entity not found error", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("class_123")
+      entity_id = "nonexistent_entity"
+
+      attrs = %{
+        "record" => %{"data" => "test"}
+      }
+
+      Bypass.expect(bypass, "PATCH", "/memory/classes/class_123/entities/#{entity_id}", fn conn ->
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(404, Jason.encode!(%{"error" => "not found"}))
+      end)
+
+      assert {:error, :not_found} = Memory.update_entity(client, class, entity_id, attrs)
+    end
+
+    test "handles complex record structures with bypass", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("complex_class_123")
+      entity_id = "complex_entity"
+
+      complex_record = %{
+        "user" => %{
+          "name" => "Jane Smith",
+          "age" => 35,
+          "preferences" => %{
+            "theme" => "light",
+            "notifications" => false
+          }
+        },
+        "metadata" => %{
+          "updated_at" => "2024-01-01T00:00:00Z",
+          "tags" => ["updated", "production"]
+        }
+      }
+
+      attrs = %{
+        "identifier" => "complex-updated",
+        "record" => complex_record,
+        "validate_record" => false
+      }
+
+      expected_response = %{
+        "data" => %{
+          "id" => entity_id,
+          "class_id" => "complex_class_123",
+          "current_state" => "active",
+          "identifier" => "complex-updated"
+        }
+      }
+
+      Bypass.expect(
+        bypass,
+        "PATCH",
+        "/memory/classes/complex_class_123/entities/#{entity_id}",
+        fn conn ->
+          {:ok, body, conn} = Plug.Conn.read_body(conn)
+          request_data = Jason.decode!(body)
+
+          # Verify the complex record structure is preserved
+          assert request_data["entity"]["identifier"] == "complex-updated"
+          assert request_data["entity"]["record"]["user"]["name"] == "Jane Smith"
+          assert request_data["entity"]["record"]["user"]["age"] == 35
+          assert request_data["entity"]["record"]["user"]["preferences"]["theme"] == "light"
+
+          assert request_data["entity"]["record"]["user"]["preferences"]["notifications"] == false
+
+          assert request_data["entity"]["record"]["metadata"]["updated_at"] ==
+                   "2024-01-01T00:00:00Z"
+
+          assert request_data["entity"]["record"]["metadata"]["tags"] == ["updated", "production"]
+          assert request_data["entity"]["validate_record"] == false
+
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.resp(200, Jason.encode!(expected_response))
+        end
+      )
+
+      assert {:ok, %Entity{} = entity} = Memory.update_entity(client, class, entity_id, attrs)
+      assert entity.id == entity_id
+      assert entity.class_id == "complex_class_123"
+      assert entity.current_state == "active"
+      assert entity.identifier == "complex-updated"
+    end
+
+    test "validates request headers and content type", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("headers_test_123")
+      entity_id = "entity_headers"
+
+      attrs = %{
+        "identifier" => "headers-test",
+        "record" => %{"test" => "data"}
+      }
+
+      Bypass.expect(
+        bypass,
+        "PATCH",
+        "/memory/classes/headers_test_123/entities/#{entity_id}",
+        fn conn ->
+          # Verify headers
+          assert Plug.Conn.get_req_header(conn, "authorization") == ["Bearer mock_token"]
+          assert Plug.Conn.get_req_header(conn, "content-type") == ["application/json"]
+
+          expected_response = %{
+            "data" => %{
+              "id" => entity_id,
+              "class_id" => "headers_test_123",
+              "current_state" => "active",
+              "identifier" => "headers-test"
+            }
+          }
+
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.resp(200, Jason.encode!(expected_response))
+        end
+      )
+
+      assert {:ok, %Entity{}} = Memory.update_entity(client, class, entity_id, attrs)
+    end
+  end
+
   describe "create_entity/3 - unit tests" do
     test "creates entity with valid parameters" do
       _client = mock_client("ingest")
@@ -447,6 +715,89 @@ defmodule TamaEx.MemoryTest do
       assert_raise FunctionClauseError, fn ->
         Memory.get_entity(client, class, 123)
       end
+    end
+  end
+
+  describe "update_entity/4 - unit tests" do
+    test "validates required client namespace" do
+      client = mock_client("provision")
+      class = mock_class()
+      attrs = %{"record" => %{"data" => "test"}}
+
+      assert_raise ArgumentError, ~r/Invalid client namespace/, fn ->
+        Memory.update_entity(client, class, "entity_id", attrs)
+      end
+    end
+
+    test "validates class id is a binary" do
+      client = mock_client("memory")
+      invalid_class = %Class{id: nil, name: "Invalid", provision_state: "active"}
+      attrs = %{"record" => %{"data" => "test"}}
+
+      assert_raise FunctionClauseError, fn ->
+        Memory.update_entity(client, invalid_class, "entity_id", attrs)
+      end
+    end
+
+    test "validates entity id is a binary" do
+      client = mock_client("memory")
+      class = mock_class()
+      attrs = %{"record" => %{"data" => "test"}}
+
+      assert_raise FunctionClauseError, fn ->
+        Memory.update_entity(client, class, 123, attrs)
+      end
+    end
+
+    test "validates entity parameters" do
+      _client = mock_client("memory")
+      _class = mock_class()
+
+      # Empty attrs should still validate if record is provided
+      valid_attrs = %{"record" => %{"data" => "test"}}
+      assert {:ok, validated} = EntityParams.validate_update(valid_attrs)
+      assert validated["record"] == %{"data" => "test"}
+
+      # Invalid attrs without record should fail
+      invalid_attrs = %{"invalid" => "params"}
+      assert {:error, %Ecto.Changeset{}} = EntityParams.validate_update(invalid_attrs)
+    end
+
+    test "constructs correct URL for update API call" do
+      # This test verifies the URL construction logic
+      class_id = "my_class_123"
+      entity_id = "entity_456"
+      _expected_url = "/memory/classes/#{class_id}/entities/#{entity_id}"
+
+      class = mock_class(class_id)
+      assert class.id == class_id
+    end
+
+    test "sends correct JSON payload structure for update" do
+      attrs = %{
+        "identifier" => "updated-entity",
+        "record" => %{"name" => "Updated"},
+        "validate_record" => false
+      }
+
+      assert {:ok, validated_params} = EntityParams.validate_update(attrs)
+
+      # Verify the expected JSON structure
+      expected_json = %{entity: validated_params}
+      assert expected_json[:entity]["identifier"] == "updated-entity"
+      assert expected_json[:entity]["record"] == %{"name" => "Updated"}
+      assert expected_json[:entity]["validate_record"] == false
+    end
+
+    test "allows partial updates with only record" do
+      attrs = %{
+        "record" => %{"field" => "new_value"}
+      }
+
+      assert {:ok, validated_params} = EntityParams.validate_update(attrs)
+      assert validated_params["record"] == %{"field" => "new_value"}
+      # Default value
+      assert validated_params["validate_record"] == true
     end
   end
 

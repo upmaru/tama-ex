@@ -55,4 +55,33 @@ defmodule TamaEx.Memory do
       |> TamaEx.handle_response(Entity)
     end
   end
+
+  @doc """
+  Updates an entity for a class.
+
+  ## Parameters
+    - client - The HTTP client
+    - class - The Class struct containing the class_id
+    - id - Entity ID or identifier to update
+    - attrs - Map containing entity parameters (record is required, identifier and validate_record are optional)
+
+  ## Examples
+
+      iex> attrs = %{"record" => %{"name" => "Updated Name"}}
+      iex> {:ok, validated_params} = TamaEx.Memory.Entity.Params.validate_update(attrs)
+      iex> validated_params["record"]
+      %{"name" => "Updated Name"}
+
+  """
+  def update_entity(client, %TamaEx.Neural.Class{id: class_id}, id, attrs)
+      when is_binary(class_id) and is_binary(id) do
+    with {:ok, validated_client} <- TamaEx.validate_client(client, ["memory"]),
+         {:ok, validated_params} <- EntityParams.validate_update(attrs) do
+      url = "/classes/#{class_id}/entities/#{id}"
+
+      validated_client
+      |> Req.patch(url: url, json: %{entity: validated_params})
+      |> TamaEx.handle_response(Entity)
+    end
+  end
 end
