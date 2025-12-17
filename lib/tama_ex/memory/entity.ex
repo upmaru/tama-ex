@@ -8,13 +8,14 @@ defmodule TamaEx.Memory.Entity do
     field :class_id, :string
     field :current_state, :string
     field :identifier, :string
+    field :record, :map
   end
 
   @doc false
   def changeset(entity, attrs) do
     entity
-    |> cast(attrs, [:id, :class_id, :current_state, :identifier])
-    |> validate_required([:class_id, :current_state, :identifier])
+    |> cast(attrs, [:id, :class_id, :current_state, :identifier, :record])
+    |> validate_required([:class_id, :current_state, :identifier, :record])
   end
 
   @doc """
