@@ -39,7 +39,8 @@ defmodule TamaEx.MemoryTest do
           "id" => "entity_created_456",
           "class_id" => "test_class_123",
           "current_state" => "active",
-          "identifier" => "test-entity-bypass"
+          "identifier" => "test-entity-bypass",
+          "record" => %{"name" => "Test Entity", "value" => 42}
         }
       }
 
@@ -144,7 +145,8 @@ defmodule TamaEx.MemoryTest do
             "id" => "entity_#{class_id}",
             "class_id" => class_id,
             "current_state" => "active",
-            "identifier" => "test-#{class_id}"
+            "identifier" => "test-#{class_id}",
+            "record" => %{}
           }
         }
 
@@ -185,7 +187,8 @@ defmodule TamaEx.MemoryTest do
             "id" => "headers_entity_123",
             "class_id" => "headers_test_123",
             "current_state" => "active",
-            "identifier" => "headers-test"
+            "identifier" => "headers-test",
+            "record" => %{"test" => "data"}
           }
         }
 
@@ -228,7 +231,8 @@ defmodule TamaEx.MemoryTest do
           "id" => "complex_entity_789",
           "class_id" => "complex_class_123",
           "current_state" => "active",
-          "identifier" => "complex-entity"
+          "identifier" => "complex-entity",
+          "record" => complex_record
         }
       }
 
@@ -274,7 +278,8 @@ defmodule TamaEx.MemoryTest do
           "id" => "entity_returned_123",
           "class_id" => "class_for_get",
           "current_state" => "active",
-          "identifier" => entity_identifier
+          "identifier" => entity_identifier,
+          "record" => %{"some" => "data"}
         }
       }
 
@@ -335,7 +340,8 @@ defmodule TamaEx.MemoryTest do
           "id" => entity_id,
           "class_id" => "test_class_123",
           "current_state" => "active",
-          "identifier" => "updated-entity-bypass"
+          "identifier" => "updated-entity-bypass",
+          "record" => %{"name" => "Updated Entity", "value" => 99}
         }
       }
 
@@ -385,7 +391,8 @@ defmodule TamaEx.MemoryTest do
           "id" => "entity_789",
           "class_id" => "test_class_456",
           "current_state" => "updated",
-          "identifier" => entity_identifier
+          "identifier" => entity_identifier,
+          "record" => %{"status" => "updated"}
         }
       }
 
@@ -507,7 +514,8 @@ defmodule TamaEx.MemoryTest do
           "id" => entity_id,
           "class_id" => "complex_class_123",
           "current_state" => "active",
-          "identifier" => "complex-updated"
+          "identifier" => "complex-updated",
+          "record" => complex_record
         }
       }
 
@@ -571,7 +579,8 @@ defmodule TamaEx.MemoryTest do
               "id" => entity_id,
               "class_id" => "headers_test_123",
               "current_state" => "active",
-              "identifier" => "headers-test"
+              "identifier" => "headers-test",
+              "record" => %{"test" => "data"}
             }
           }
 
@@ -808,7 +817,8 @@ defmodule TamaEx.MemoryTest do
         "id" => "entity_789",
         "class_id" => "class_123",
         "current_state" => "active",
-        "identifier" => "my-entity"
+        "identifier" => "my-entity",
+        "record" => %{"data" => "value"}
       }
 
       entity = Entity.parse(api_response_data)
@@ -825,7 +835,8 @@ defmodule TamaEx.MemoryTest do
       minimal_data = %{
         "class_id" => "class_456",
         "current_state" => "pending",
-        "identifier" => "minimal-entity"
+        "identifier" => "minimal-entity",
+        "record" => %{}
       }
 
       entity = Entity.parse(minimal_data)
@@ -996,7 +1007,7 @@ defmodule TamaEx.MemoryTest do
   describe "Entity struct behavior" do
     test "Entity.parse handles string input" do
       json_string =
-        ~s({"id": "123", "class_id": "class1", "current_state": "active", "identifier": "test"})
+        ~s({"id": "123", "class_id": "class1", "current_state": "active", "identifier": "test", "record": {}})
 
       entity = Entity.parse(json_string)
       assert %Entity{} = entity
@@ -1034,12 +1045,24 @@ defmodule TamaEx.MemoryTest do
       assert changeset.errors[:current_state]
       assert changeset.errors[:identifier]
 
-      # Test with valid data
-      valid_changeset =
+      # Test with valid data (record is required)
+      invalid_changeset =
         Entity.changeset(%Entity{}, %{
           "class_id" => "class1",
           "current_state" => "active",
           "identifier" => "test"
+        })
+
+      refute invalid_changeset.valid?
+      assert invalid_changeset.errors[:record]
+
+      # Test with valid data including record
+      valid_changeset =
+        Entity.changeset(%Entity{}, %{
+          "class_id" => "class1",
+          "current_state" => "active",
+          "identifier" => "test",
+          "record" => %{"data" => "value"}
         })
 
       assert valid_changeset.valid?
@@ -1072,7 +1095,11 @@ defmodule TamaEx.MemoryTest do
         "id" => "generated_123",
         "class_id" => "target_class",
         "current_state" => "created",
-        "identifier" => "workflow-test"
+        "identifier" => "workflow-test",
+        "record" => %{
+          "name" => "Test Workflow",
+          "type" => "simulation"
+        }
       }
 
       parsed_entity = Entity.parse(mock_api_response)
