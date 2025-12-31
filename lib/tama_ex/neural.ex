@@ -73,4 +73,45 @@ defmodule TamaEx.Neural do
       |> TamaEx.handle_response(Operation)
     end
   end
+
+  alias __MODULE__.Node
+
+  @doc """
+  Lists nodes for a class.
+
+  ## Parameters
+    - client - The HTTP client
+    - class - The Class struct containing the class_id
+    - options - Keyword list of options (optional)
+      - :query - Query parameters to pass to the API
+
+  ## Examples
+
+      iex> TamaEx.Neural.list_nodes(client, %TamaEx.Neural.Class{id: "class_123"})
+      {:ok, [%TamaEx.Neural.Node{}]}
+
+      iex> TamaEx.Neural.list_nodes(client, %TamaEx.Neural.Class{id: "class_123"}, query: [limit: 10])
+      {:ok, [%TamaEx.Neural.Node{}]}
+
+  """
+  def list_nodes(client, %Class{id: class_id}, options \\ []) do
+    with {:ok, validated_client} <- TamaEx.validate_client(client, ["neural"]) do
+      url = "/classes/#{class_id}/nodes"
+
+      query = Keyword.get(options, :query, [])
+
+      req_options = [url: url, params: query]
+
+      req_options =
+        if Keyword.has_key?(options, :retry) do
+          Keyword.put(req_options, :retry, Keyword.get(options, :retry))
+        else
+          req_options
+        end
+
+      validated_client
+      |> Req.get(req_options)
+      |> TamaEx.handle_response(Node)
+    end
+  end
 end
