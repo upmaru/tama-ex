@@ -6,6 +6,7 @@ defmodule TamaEx.MemoryTest do
   alias TamaEx.Memory
   alias TamaEx.Memory.Entity
   alias TamaEx.Memory.Entity.Params, as: EntityParams
+  alias TamaEx.Memory.Entity.Processing, as: EntityProcessing
   alias TamaEx.Neural.Class
 
   setup do
@@ -373,6 +374,59 @@ defmodule TamaEx.MemoryTest do
       assert entity.class_id == "test_class_123"
       assert entity.current_state == "active"
       assert entity.identifier == "updated-entity-bypass"
+    end
+
+    test "includes processing params when provided", %{bypass: bypass} do
+      base_url = "http://localhost:#{bypass.port}"
+      client = mock_client("memory", base_url)
+      class = mock_class("processing_class_123")
+      entity_id = "entity_processing_123"
+
+      attrs = %{
+        "record" => %{"status" => "processing"}
+      }
+
+      processing = %{
+        "chain_slugs" => ["chain-alpha"],
+        "chain_ids" => ["chain_1"],
+        "node_type" => "explicit"
+      }
+
+      expected_response = %{
+        "data" => %{
+          "id" => entity_id,
+          "class_id" => "processing_class_123",
+          "current_state" => "active",
+          "identifier" => "entity-processing",
+          "record" => %{"status" => "processing"}
+        }
+      }
+
+      Bypass.expect(
+        bypass,
+        "PATCH",
+        "/memory/classes/processing_class_123/entities/#{entity_id}",
+        fn conn ->
+          {:ok, body, conn} = Plug.Conn.read_body(conn)
+          request_data = Jason.decode!(body)
+
+          assert request_data["entity"]["record"]["status"] == "processing"
+          assert request_data["processing"]["chain_slugs"] == ["chain-alpha"]
+          assert request_data["processing"]["chain_ids"] == ["chain_1"]
+          assert request_data["processing"]["node_type"] == "explicit"
+
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.resp(200, Jason.encode!(expected_response))
+        end
+      )
+
+      assert {:ok, %Entity{} = entity} =
+               Memory.update_entity(client, class, entity_id, attrs, processing: processing)
+
+      assert entity.id == entity_id
+      assert entity.class_id == "processing_class_123"
+      assert entity.current_state == "active"
     end
 
     test "successfully updates entity by identifier", %{bypass: bypass} do
@@ -807,6 +861,26 @@ defmodule TamaEx.MemoryTest do
       assert validated_params["record"] == %{"field" => "new_value"}
       # Default value
       assert validated_params["validate_record"] == true
+    end
+  end
+
+  describe "EntityProcessing validation" do
+    test "validates with all required fields" do
+      attrs = %{
+        "chain_slugs" => ["chain-1"],
+        "chain_ids" => ["id-1"],
+        "node_type" => "explicit"
+      }
+
+      assert {:ok, validated} = EntityProcessing.validate(attrs)
+      assert validated["chain_slugs"] == ["chain-1"]
+      assert validated["chain_ids"] == ["id-1"]
+      assert validated["node_type"] == "explicit"
+    end
+
+    test "fails when required fields are missing" do
+      attrs = %{}
+      assert {:error, %Ecto.Changeset{}} = EntityProcessing.validate(attrs)
     end
   end
 

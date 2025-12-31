@@ -4,7 +4,7 @@ defmodule TamaEx.MixProject do
   def project do
     [
       app: :tama_ex,
-      version: "0.1.15",
+      version: "0.1.16",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
