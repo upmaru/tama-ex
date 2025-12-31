@@ -5,6 +5,7 @@ defmodule TamaEx.Memory do
 
   alias __MODULE__.Entity
   alias __MODULE__.Entity.Params, as: EntityParams
+  alias __MODULE__.Entity.Processing, as: EntityProcessing
 
   @doc """
   Creates a new entity for a class.
@@ -73,15 +74,35 @@ defmodule TamaEx.Memory do
       %{"name" => "Updated Name"}
 
   """
-  def update_entity(client, %TamaEx.Neural.Class{id: class_id}, id, attrs)
+  def update_entity(client, %TamaEx.Neural.Class{id: class_id}, id, attrs, options \\ [])
       when is_binary(class_id) and is_binary(id) do
+    processing_params =
+      case Keyword.fetch(options, :processing) do
+        {:ok, params} -> {:provided, params}
+        :error -> :not_provided
+      end
+
     with {:ok, validated_client} <- TamaEx.validate_client(client, ["memory"]),
-         {:ok, validated_params} <- EntityParams.validate_update(attrs) do
+         {:ok, validated_params} <- EntityParams.validate_update(attrs),
+         {:ok, validated_processing_params} <- validate_processing_params(processing_params) do
       url = "/classes/#{class_id}/entities/#{id}"
 
+      body = %{entity: validated_params}
+
+      body = maybe_put_processing(body, validated_processing_params)
+
       validated_client
-      |> Req.patch(url: url, json: %{entity: validated_params})
+      |> Req.patch(url: url, json: body)
       |> TamaEx.handle_response(Entity)
     end
   end
+
+  defp validate_processing_params(:not_provided), do: {:ok, :not_provided}
+
+  defp validate_processing_params({:provided, params}) do
+    EntityProcessing.validate(params)
+  end
+
+  defp maybe_put_processing(body, :not_provided), do: body
+  defp maybe_put_processing(body, params), do: Map.put(body, :processing, params)
 end
