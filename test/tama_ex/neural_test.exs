@@ -42,6 +42,189 @@ defmodule TamaEx.NeuralTest do
     {:ok, bypass: bypass, client: neural_client}
   end
 
+  describe "list_spaces/2" do
+    test "validates required client namespace", %{bypass: bypass} do
+      client = mock_client("ingest", "http://localhost:#{bypass.port}")
+
+      assert_raise ArgumentError, ~r/Invalid client namespace/, fn ->
+        Neural.list_spaces(client)
+      end
+    end
+
+    test "handles successful list response", %{bypass: bypass, client: client} do
+      Bypass.expect(bypass, "GET", "/neural/spaces", fn conn ->
+        response_data = %{
+          "data" => [
+            %{
+              "id" => "space_001",
+              "name" => "Root Space",
+              "slug" => "root-space",
+              "type" => "root",
+              "provision_state" => "active"
+            },
+            %{
+              "id" => "space_002",
+              "name" => "Child Space",
+              "slug" => "child-space",
+              "type" => "child",
+              "provision_state" => "pending"
+            }
+          ]
+        }
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(response_data))
+      end)
+
+      assert {:ok, spaces} = Neural.list_spaces(client)
+      assert is_list(spaces)
+      assert length(spaces) == 2
+
+      [space1, space2] = spaces
+      assert %Space{} = space1
+      assert space1.id == "space_001"
+      assert space1.name == "Root Space"
+      assert space1.slug == "root-space"
+      assert space1.type == "root"
+      assert space1.provision_state == "active"
+
+      assert %Space{} = space2
+      assert space2.id == "space_002"
+      assert space2.name == "Child Space"
+      assert space2.slug == "child-space"
+      assert space2.type == "child"
+      assert space2.provision_state == "pending"
+    end
+
+    test "handles empty list response", %{bypass: bypass, client: client} do
+      Bypass.expect(bypass, "GET", "/neural/spaces", fn conn ->
+        response_data = %{"data" => []}
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(response_data))
+      end)
+
+      assert {:ok, spaces} = Neural.list_spaces(client)
+      assert is_list(spaces)
+      assert length(spaces) == 0
+    end
+
+    test "passes query parameters", %{bypass: bypass, client: client} do
+      query_params = %{type: "root"}
+
+      Bypass.expect(bypass, "GET", "/neural/spaces", fn conn ->
+        assert conn.query_string =~ "type=root"
+
+        response_data = %{
+          "data" => [
+            %{
+              "id" => "space_root",
+              "name" => "Root Space",
+              "slug" => "root-space",
+              "type" => "root",
+              "provision_state" => "active"
+            }
+          ]
+        }
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(response_data))
+      end)
+
+      assert {:ok, spaces} = Neural.list_spaces(client, query: query_params)
+      assert length(spaces) == 1
+
+      [space] = spaces
+      assert space.id == "space_root"
+      assert space.type == "root"
+    end
+
+    test "handles 404 not found", %{bypass: bypass, client: client} do
+      Bypass.expect(bypass, "GET", "/neural/spaces", fn conn ->
+        conn
+        |> Plug.Conn.resp(404, "")
+      end)
+
+      assert {:error, :not_found} = Neural.list_spaces(client, retry: false)
+    end
+
+    test "handles 422 validation errors", %{bypass: bypass, client: client} do
+      Bypass.expect(bypass, "GET", "/neural/spaces", fn conn ->
+        error_response = %{
+          "errors" => [
+            %{"field" => "type", "message" => "is invalid"}
+          ]
+        }
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(422, Jason.encode!(error_response))
+      end)
+
+      assert {:error, {:validation_error, errors}} =
+               Neural.list_spaces(client, retry: false)
+
+      assert is_list(errors)
+    end
+
+    test "handles server errors", %{bypass: bypass, client: client} do
+      Bypass.expect(bypass, "GET", "/neural/spaces", fn conn ->
+        conn
+        |> Plug.Conn.resp(500, "Internal Server Error")
+      end)
+
+      assert {:error, _} = Neural.list_spaces(client, retry: false)
+    end
+
+    test "handles network errors", %{bypass: bypass, client: client} do
+      Bypass.down(bypass)
+
+      assert {:error, {:request_failed, %Req.TransportError{reason: :econnrefused}}} =
+               Neural.list_spaces(client, retry: false)
+
+      Bypass.up(bypass)
+    end
+
+    test "handles malformed response data gracefully", %{bypass: bypass, client: client} do
+      Bypass.expect(bypass, "GET", "/neural/spaces", fn conn ->
+        response_data = %{
+          "data" => [
+            %{
+              "id" => "space_incomplete"
+              # Missing required fields
+            },
+            %{
+              "id" => "space_002",
+              "name" => "Valid Space",
+              "slug" => "valid-space",
+              "type" => "root",
+              "provision_state" => "active"
+            }
+          ]
+        }
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(response_data))
+      end)
+
+      assert {:ok, spaces} = Neural.list_spaces(client)
+      assert is_list(spaces)
+      assert length(spaces) == 2
+    end
+
+    test "handles client validation errors" do
+      invalid_client = %Req.Request{options: %{}}
+
+      assert_raise ArgumentError, ~r/Failed to extract namespace/, fn ->
+        Neural.list_spaces(invalid_client)
+      end
+    end
+  end
+
   describe "get_space/2" do
     test "validates required client namespace" do
       # Test with wrong namespace
@@ -411,6 +594,11 @@ defmodule TamaEx.NeuralTest do
         Neural.create_class_operation(invalid_client, class, %{"chain_ids" => ["chain1"]})
       end
 
+      # list_spaces
+      assert_raise ArgumentError, ~r/Failed to extract namespace/, fn ->
+        Neural.list_spaces(invalid_client)
+      end
+
       # list_nodes
       assert_raise ArgumentError, ~r/Failed to extract namespace/, fn ->
         Neural.list_nodes(invalid_client, class)
@@ -422,7 +610,7 @@ defmodule TamaEx.NeuralTest do
       space = mock_space()
       class = mock_class()
 
-      # All functions should require provision namespace
+      # Functions that require provision namespace
       assert_raise ArgumentError, ~r/Invalid client namespace/, fn ->
         Neural.get_space(client_wrong, "test")
       end
@@ -433,6 +621,11 @@ defmodule TamaEx.NeuralTest do
 
       assert_raise ArgumentError, ~r/Invalid client namespace/, fn ->
         Neural.create_class_operation(client_wrong, class, %{"chain_ids" => ["chain1"]})
+      end
+
+      # list_spaces requires neural namespace
+      assert_raise ArgumentError, ~r/Invalid client namespace/, fn ->
+        Neural.list_spaces(client_wrong)
       end
 
       # list_nodes requires neural namespace

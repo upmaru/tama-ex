@@ -34,10 +34,20 @@ defmodule TamaEx.Neural.Space do
       %TamaEx.Neural.Space{id: "123", name: "My Space"}
 
   """
+  def parse(attrs) when is_list(attrs) do
+    Enum.map(attrs, &parse/1)
+  end
+
   def parse(attrs) when is_map(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> apply_action!(:insert)
+    |> case do
+      %Ecto.Changeset{valid?: true} = changeset ->
+        Ecto.Changeset.apply_changes(changeset)
+
+      %Ecto.Changeset{valid?: false} ->
+        %__MODULE__{}
+    end
   end
 
   def parse(attrs) when is_binary(attrs) do
