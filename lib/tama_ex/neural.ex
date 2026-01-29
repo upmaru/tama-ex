@@ -6,6 +6,44 @@ defmodule TamaEx.Neural do
   alias __MODULE__.Space
 
   @doc """
+  Lists spaces.
+
+  ## Parameters
+    - client - The HTTP client
+    - options - Keyword list of options (optional)
+      - :query - Query parameters to pass to the API
+
+  ## Examples
+
+      iex> TamaEx.Neural.list_spaces(client)
+      {:ok, [%TamaEx.Neural.Space{}]}
+
+      iex> TamaEx.Neural.list_spaces(client, query: %{type: "root"})
+      {:ok, [%TamaEx.Neural.Space{}]}
+
+  """
+  def list_spaces(client, options \\ []) do
+    with {:ok, validated_client} <- TamaEx.validate_client(client, ["neural"]) do
+      url = "/spaces"
+
+      query = Keyword.get(options, :query, [])
+
+      req_options = [url: url, params: query]
+
+      req_options =
+        if Keyword.has_key?(options, :retry) do
+          Keyword.put(req_options, :retry, Keyword.get(options, :retry))
+        else
+          req_options
+        end
+
+      validated_client
+      |> Req.get(req_options)
+      |> TamaEx.handle_response(Space)
+    end
+  end
+
+  @doc """
   Gets a space by slug from the provision endpoint.
 
   ## Parameters
