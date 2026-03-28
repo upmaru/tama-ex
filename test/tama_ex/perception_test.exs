@@ -378,7 +378,88 @@ defmodule TamaEx.PerceptionTest do
     end
   end
 
-  describe "list_concepts/3" do
+  describe "list_concepts/3 with actor params" do
+    test "validates required client namespace" do
+      client = mock_client("ingest")
+
+      params = %{
+        actor: %{source: "system", identifier: "agent_123"},
+        tool_call_id: "tool-call-123"
+      }
+
+      assert_raise ArgumentError, ~r/Invalid client namespace/, fn ->
+        Perception.list_concepts(client, query: params)
+      end
+    end
+
+    test "handles successful list response", %{bypass: bypass, client: client} do
+      actor = %{source: "system", identifier: "agent_123"}
+
+      Bypass.expect(bypass, "GET", "/perception/concepts", fn conn ->
+        conn = Plug.Conn.fetch_query_params(conn)
+
+        assert conn.params["actor"]["source"] == actor.source
+        assert conn.params["actor"]["identifier"] == actor.identifier
+        assert conn.params["tool_call_id"] == "tool-call-123"
+
+        response_data = %{
+          "data" => [
+            %{
+              "id" => "concept_001",
+              "relation" => "reply",
+              "content" => %{"text" => "Hello world"},
+              "generator" => %{
+                "type" => "module",
+                "reference" => "tama/classes/extraction",
+                "parameters" => %{"depth" => 1, "names" => nil, "types" => ["array"]}
+              }
+            }
+          ]
+        }
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(response_data))
+      end)
+
+      params = %{
+        actor: actor,
+        tool_call_id: "tool-call-123"
+      }
+
+      assert {:ok, concepts} = Perception.list_concepts(client, query: params)
+      assert length(concepts) == 1
+
+      [concept] = concepts
+      assert concept.id == "concept_001"
+      assert concept.relation == "reply"
+    end
+
+    test "passes arbitrary actor query params without validation", %{
+      bypass: bypass,
+      client: client
+    } do
+      params = %{
+        actor: %{source: "system", identifier: "agent_123"}
+      }
+
+      Bypass.expect(bypass, "GET", "/perception/concepts", fn conn ->
+        conn = Plug.Conn.fetch_query_params(conn)
+
+        assert conn.params["actor"]["source"] == "system"
+        assert conn.params["actor"]["identifier"] == "agent_123"
+        refute Map.has_key?(conn.params, "tool_call_id")
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(%{"data" => []}))
+      end)
+
+      assert {:ok, []} = Perception.list_concepts(client, query: params)
+    end
+  end
+
+  describe "list_concepts/3 with entity_id" do
     test "validates required client namespace", %{bypass: bypass} do
       client = mock_client("ingest", "http://localhost:#{bypass.port}")
       entity_id = "entity_123"
@@ -510,6 +591,24 @@ defmodule TamaEx.PerceptionTest do
       [concept] = concepts
       assert concept.id == "concept_filtered"
       assert concept.relation == "reply"
+    end
+
+    test "flattens nested query maps", %{bypass: bypass, client: client} do
+      entity_id = "entity_nested"
+      query_params = %{filters: %{relation: "reply", limit: 10}}
+
+      Bypass.expect(bypass, "GET", "/perception/entities/#{entity_id}/concepts", fn conn ->
+        conn = Plug.Conn.fetch_query_params(conn)
+
+        assert conn.params["filters"]["relation"] == "reply"
+        assert conn.params["filters"]["limit"] == "10"
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(%{"data" => []}))
+      end)
+
+      assert {:ok, []} = Perception.list_concepts(client, entity_id, query: query_params)
     end
 
     test "handles 404 not found", %{bypass: bypass, client: client} do
