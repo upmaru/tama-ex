@@ -564,4 +564,19 @@ defmodule TamaExTest do
       assert {:ok, %{client: _client, expires_in: 3600}} = result
     end
   end
+
+  describe "TamaEx.Query.flatten/1" do
+    test "flattens nested maps into bracketed query keys" do
+      params = %{
+        actor: %{source: "system", identifier: "agent_123"},
+        tool_call_id: "tool-call-123"
+      }
+
+      assert TamaEx.Query.flatten(params) == [
+               {"actor[source]", "system"},
+               {"actor[identifier]", "agent_123"},
+               {"tool_call_id", "tool-call-123"}
+             ]
+    end
+  end
 end
